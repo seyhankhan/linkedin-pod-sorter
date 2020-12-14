@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<script type="text/javascript">
+  $(document).ready(() => {
+    $('.ui.dropdown').dropdown();
+
+    $('#form1').form({
+      fields: {
+        name: 'empty',
+        email: 'email',
+        linkedinProfile: 'url',
+        timezone: 'minLength[1]'
+      }
+    });
+  });
+</script>
+
+<div id="theContainer">
+  <h1>
+    LinkedIn Pod Sorter
+  </h1>
+  <div id="formsContainer">
+    <div class="formContainer">
+      <h2>Join the program</h2>
+
+      <form id="form1" method="POST" action="/" class="ui form">
+        <div class="field">
+          <label>Name</label>
+          <input type="text" name="name" placeholder="John Smith">
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="text" name="email" placeholder="example@test.com">
+        </div>
+        <div class="field">
+          <label>LinkedIn Profile</label>
+          <input type="text" name="linkedinProfile" placeholder="linkedin.com/in/johnsmith">
+        </div>
+        <div class="field">
+          <label>Time Zone</label>
+          <select class="ui search dropdown">
+            <option value="">Time Zone</option>
+            <option value="Europe/London">Europe/London</option>
+            <option value="America/New York">America/New York</option>
+          </select>
+        </div>
+
+        <button class="ui primary button" type="submit">Submit</button>
+        <div class="ui error message">
+        </div>
+      </form>
+    </div>
+    <div class="formContainer">
+      <h3>Already joined?</h3>
+      <div>Confirm your participation for next week</div>
+      <div id="emailInputBox" class="ui fluid action input">
+        <input type="text" placeholder="example@test.com">
+        <div class="ui blue button">Confirm</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

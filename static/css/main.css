@@ -1,0 +1,45 @@
+body {
+  font-family: Avenir !important;
+  color: #333333;
+}
+
+h1 {
+  font-weight:lighter !important;
+  font-size: 3em;
+  text-align: center;
+}
+
+h2 {
+  font-weight:lighter;
+  margin: 0;
+  text-align: center;
+}
+
+#theContainer {
+  padding-top: 80px;
+  margin: auto;
+  width: 64vw;
+}
+
+#formsContainer {
+  margin-top: 80px;
+  display: flex;
+  justify-content: space-around;
+}
+
+.formContainer {
+  width: 25vw;
+  background: #F2F2F2;
+  padding: 24px 32px;
+  border-radius: 8px;
+  height: fit-content;
+  margin-bottom: 0px;
+}
+
+#form1 {
+  margin-top: 16px;
+}
+
+#emailInputBox {
+  margin-top: 16px;
+}

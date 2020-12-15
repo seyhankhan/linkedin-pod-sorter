@@ -6,8 +6,19 @@ body {
   background-image:
     linear-gradient(to bottom, rgba(35, 31, 32, 0.4), rgba(35, 31, 32, 0.4)),
     url("../img/mountains.jpg");
-  background-repeat: no-repeat;
   background-size: cover;
+}
+
+#theContainer {
+  padding-top: 80px;
+  margin: auto;
+  width: 64vw;
+}
+
+#theTitle {
+  justify-content: center !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
 h1 {
@@ -18,15 +29,42 @@ h1 {
   text-align: center;
 }
 
-#theTitle {
-  justify-content: center !important;
-  display: flex !important;
-  align-items: center !important;
+@media (max-width: 644px) {
+  h1 {
+    font-size: 2.7em;
+  }
+}
+
+@media (max-width: 586px) {
+  h1 {
+    font-size: 2.4em;
+  }
+}
+
+@media (max-width: 530px) {
+  h1 {
+    font-size: 2.24em;
+  }
 }
 
 img {
   height: 40px;
   margin-right: 8px
+}
+
+#formContainer {
+  min-width: 290px;
+  width: 25vw;
+  margin: auto;
+  margin-top: 80px;
+  background: #F2F2F2;
+  padding: 24px 32px;
+  border-radius: 8px;
+  height: fit-content;
+}
+
+#signupForm {
+  margin-top: 16px;
 }
 
 h2 {
@@ -35,59 +73,16 @@ h2 {
   text-align: center;
 }
 
+#buttonContainer {
+  justify-content: center !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
 .button {
   background-color: #1066C2 !important;
 }
 
 .button:hover {
   opacity: 0.7 !important;
-}
-
-#theContainer {
-  padding-top: 80px;
-  margin: auto;
-  width: 64vw;
-}
-
-#formsContainer {
-  margin-top: 80px;
-
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-gap: 16px;
-
-  justify-content: space-around;
-}
-
-
-@media (max-width: 584px) {
-  #formsContainer {
-    grid-template-columns: 1fr;
-    margin-top: 24px;
-  }
-  body {
-    background-size: auto 100vh;
-  }
-  h1 {
-    font-size: 2.4em;
-  }
-}
-
-.formContainer {
-  min-width: 264px;
-  width: 25vw;
-  margin:auto;
-  /* margin-top:0; */
-  background: #F2F2F2;
-  padding: 24px 32px;
-  border-radius: 8px;
-  height: fit-content;
-}
-
-#form-signup {
-  margin-top: 16px;
-}
-
-#emailInputBox {
-  margin-top: 16px;
 }

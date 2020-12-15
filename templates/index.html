@@ -11,7 +11,7 @@
   $(document).ready(() => {
     $('.ui.dropdown').dropdown();
 
-    $('#form1').form({
+    $('#signupForm').form({
       fields: {
         name: 'empty',
         email: 'email',
@@ -23,52 +23,59 @@
 </script>
 
 <div id="theContainer">
-
   <div id="theTitle">
     <img id="linkedin-logo" src="static/img/linkedin.png">
     <h1>LinkedIn Pod Sorter</h1>
   </div>
 
-  <div id="formsContainer">
-    <div class="formContainer">
-      <h2>Join the program</h2>
+  <div id="formContainer">
+    <h2>Join the program</h2>
 
-      <form id="form-signup" class="ui form"> <!--method="POST" action="/"-->
-        <div class="field">
-          <label>Name</label>
-          <input type="text" name="name" placeholder="John Smith">
-        </div>
-        <div class="field">
-          <label>Email</label>
-          <input type="text" name="email" placeholder="example@test.com">
-        </div>
-        <div class="field">
-          <label>LinkedIn Profile</label>
-          <input type="text" name="linkedinProfile" placeholder="linkedin.com/in/johnsmith">
-        </div>
-        <div class="field">
-          <label>Time Zone</label>
-          <select class="ui search dropdown">
-            <option value="">Time Zone</option>
-            <option value="Europe/London">Europe/London</option>
-            <option value="America/New York">America/New York</option>
-          </select>
-        </div>
-
-        <div onclick="window.location.href='/confirmation'" class="ui primary button">Submit</div>
-        <div class="ui error message">
-        </div>
-      </form>
-    </div>
-    <div class="formContainer">
-      <h3>Already joined?</h3>
-      <div>Confirm your participation for next week</div>
-      <div id="emailInputBox" class="ui fluid action input">
-        <input type="text" placeholder="example@test.com">
-        <div onclick="window.location.href='/confirmation'" class="ui blue button">Confirm</div>
+    <form id="signupForm" class="ui form"> <!--method="POST" action="/"-->
+      <div class="field">
+        <label>Name</label>
+        <input type="text" name="name" placeholder="John Smith">
       </div>
-    </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="text" name="email" placeholder="example@test.com">
+      </div>
+      <div class="field">
+        <label>LinkedIn Profile</label>
+        <input type="text" name="linkedinProfile" placeholder="linkedin.com/in/johnsmith">
+      </div>
+      <div class="field">
+        <label>Time Zone</label>
+        <select class="ui search dropdown">
+          <option value="">Time Zone</option>
+          <option value="Europe/London">Europe/London</option>
+          <option value="America/New York">America/New York</option>
+        </select>
+      </div>
+
+      <div id="buttonContainer">
+        <div onclick="window.location.href='/confirmation'" class="ui primary button">Submit</div>
+      </div>
+      <div class="ui error message">
+      </div>
+    </form>
   </div>
 </div>
 
 {% endblock %}
+<!-- <div class="formContainer">
+  <h3>Already joined?</h3>
+  <div>Confirm your participation for next week</div>
+  <div id="emailInputBox" class="ui fluid action input">
+    <input type="text" placeholder="example@test.com">
+    <div onclick="window.location.href='/confirmation'" class="ui blue button">Confirm</div>
+  </div>
+</div>
+#formsContainer {
+  margin-top: 80px;
+  display: flex;
+  justify-content: space-around;
+}
+#emailInputBox {
+  margin-top: 16px;
+} -->

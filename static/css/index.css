@@ -6,6 +6,7 @@ body {
   background-image:
     linear-gradient(to bottom, rgba(35, 31, 32, 0.4), rgba(35, 31, 32, 0.4)),
     url("../img/mountains.jpg");
+  background-repeat: no-repeat;
   background-size: cover;
 }
 
@@ -50,17 +51,37 @@ h2 {
 
 #formsContainer {
   margin-top: 80px;
-  display: flex;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 16px;
+
   justify-content: space-around;
 }
 
+
+@media (max-width: 584px) {
+  #formsContainer {
+    grid-template-columns: 1fr;
+    margin-top: 24px;
+  }
+  body {
+    background-size: auto 100vh;
+  }
+  h1 {
+    font-size: 2.4em;
+  }
+}
+
 .formContainer {
+  min-width: 264px;
   width: 25vw;
+  margin:auto;
+  margin-top:0;
   background: #F2F2F2;
   padding: 24px 32px;
   border-radius: 8px;
   height: fit-content;
-  margin-bottom: 0px;
 }
 
 #form-signup {

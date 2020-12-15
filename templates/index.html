@@ -1,4 +1,10 @@
 {% extends "layout.html" %}
+
+{% block head %}
+  <link rel="stylesheet" href="static/css/index.css">
+{% endblock %}
+
+
 {% block body %}
 
 <script type="text/javascript">
@@ -17,14 +23,17 @@
 </script>
 
 <div id="theContainer">
-  <h1>
-    LinkedIn Pod Sorter
-  </h1>
+
+  <div id="theTitle">
+    <img id="linkedin-logo" src="static/img/linkedin.png">
+    <h1>LinkedIn Pod Sorter</h1>
+  </div>
+
   <div id="formsContainer">
     <div class="formContainer">
       <h2>Join the program</h2>
 
-      <form id="form1" method="POST" action="/" class="ui form">
+      <form id="form-signup" class="ui form"> <!--method="POST" action="/"-->
         <div class="field">
           <label>Name</label>
           <input type="text" name="name" placeholder="John Smith">
@@ -46,7 +55,7 @@
           </select>
         </div>
 
-        <button class="ui primary button" type="submit">Submit</button>
+        <div onclick="window.location.href='/confirmation'" class="ui primary button">Submit</div>
         <div class="ui error message">
         </div>
       </form>
@@ -56,7 +65,7 @@
       <div>Confirm your participation for next week</div>
       <div id="emailInputBox" class="ui fluid action input">
         <input type="text" placeholder="example@test.com">
-        <div class="ui blue button">Confirm</div>
+        <div onclick="window.location.href='/confirmation'" class="ui blue button">Confirm</div>
       </div>
     </div>
   </div>

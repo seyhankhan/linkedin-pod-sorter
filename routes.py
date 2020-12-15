@@ -34,7 +34,15 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-	return render_template('index.html', title='Home')
+	return render_template('index.html')
+
+
+##################################### INDEX ####################################
+
+
+@app.route('/confirmation')
+def confirmation():
+	return render_template('confirmation.html')
 
 
 ################################# OTHER ROUTES #################################

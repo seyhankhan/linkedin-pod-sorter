@@ -1,10 +1,5 @@
 {% extends "layout.html" %}
 
-{% block head %}
-  <link rel="stylesheet" href="static/css/index.css">
-{% endblock %}
-
-
 {% block body %}
 
 <script type="text/javascript">
@@ -15,8 +10,8 @@
       fields: {
         name: 'empty',
         email: 'email',
-        linkedinProfile: 'url',
-        timezone: 'minLength[1]'
+        linkedinProfile: 'regExp[/^(http(s)?:\/\/)?(www\.)?linkedin\.com\/(in|company)\/[A-z0-9_-]+\/?/i]',
+        timezone: 'empty'
       }
     });
   });
@@ -31,31 +26,41 @@
   <div id="formContainer">
     <h2>Join the program</h2>
 
-    <form id="signupForm" class="ui form"> <!--method="POST" action="/"-->
+    <form id="signupForm" class="ui form" method="POST" action="/">
       <div class="field">
         <label>Name</label>
         <input type="text" name="name" placeholder="John Smith">
       </div>
       <div class="field">
         <label>Email</label>
-        <input type="text" name="email" placeholder="example@test.com">
+        <input type="text" name="email" placeholder="johnsmith@gmail.com">
       </div>
       <div class="field">
         <label>LinkedIn Profile</label>
-        <input type="text" name="linkedinProfile" placeholder="linkedin.com/in/johnsmith">
+        <input type="text" name="linkedinProfile" placeholder="https://linkedin.com/in/johnsmith">
       </div>
       <div class="field">
-        <label>Time Zone</label>
-        <select class="ui search dropdown">
-          <option value="">Time Zone</option>
+        <label>Your local time zone</label>
+        <select name="timezone" id="timezone" class="ui search dropdown">
+          <option value="">Select a time zone</option>
           <option value="Europe/London">Europe/London</option>
           <option value="America/New York">America/New York</option>
         </select>
       </div>
 
       <div id="buttonContainer">
-        <div onclick="window.location.href='/confirmation'" class="ui primary button">Submit</div>
+        <button class="ui primary button">Submit</button>
       </div>
+
+      {% if userAlreadySignedUp is defined and userAlreadySignedUp %}
+        <div id="alreadySignedUpErrorBox" class="ui negative message">
+          <div class="header">
+            You've already signed up with us!
+          </div>
+          <p>Check your emails to confirm your participation this week</p>
+        </div>
+      {% endif %}
+
       <div class="ui error message">
       </div>
     </form>

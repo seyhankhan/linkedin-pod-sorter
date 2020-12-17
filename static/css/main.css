@@ -1,0 +1,126 @@
+body {
+  font-family: Avenir !important;
+  color: #333333;
+  background-image:
+    linear-gradient(to bottom, rgba(35, 31, 32, 0.4), rgba(35, 31, 32, 0.4)),
+    url("../img/mountains.jpg");
+  background-size: cover;
+}
+
+#theContainer {
+  width: 64vw;
+  margin: auto;
+  padding-top: 80px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#theTitle {
+  justify-content: center;
+  display: flex;
+  align-items: center;
+}
+
+#linkedin-logo {
+  height: 40px;
+  margin-right: 8px
+}
+
+h1 {
+  margin-top: 0;
+  color: white;
+
+  font-size: 3em;
+  font-weight: lighter;
+  text-align: center;
+}
+
+@media (max-width: 644px) {
+  h1 {
+    font-size: 2.7em;
+  }
+}
+
+@media (max-width: 586px) {
+  h1 {
+    font-size: 2.4em;
+  }
+}
+
+@media (max-width: 530px) {
+  h1 {
+    font-size: 2.24em;
+  }
+}
+
+h2 {
+  margin: 0;
+  font-weight: lighter;
+  text-align: center;
+}
+
+/* -------------------------------------------------------------------------- */
+                                  /* INDEX */
+/* -------------------------------------------------------------------------- */
+
+#formContainer {
+  width: 360px;
+
+  padding: 24px 32px;
+  margin: auto;
+  margin-top: 80px;
+  border-radius: 8px;
+
+  background: #F2F2F2;
+}
+
+#signupForm {
+  margin-top: 16px;
+}
+
+#buttonContainer {
+  justify-content: center;
+  display: flex;
+  align-items: center;
+}
+
+.button {
+  background-color: #1066C2 !important;
+}
+
+.button:hover {
+  opacity: 0.7 !important;
+}
+
+#alreadySignedUpErrorBox {
+  margin-bottom: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+                            /* CONFIRMATION PAGE */
+/* -------------------------------------------------------------------------- */
+
+#textContainer {
+  width: 416px;
+
+  padding: 32px;
+  margin-top: 80px;
+  border-radius: 8px;
+
+  background-color: white;
+
+  flex-direction: column;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+}
+
+h3 {
+  margin-top: 16px;
+
+  font-size: 1.1em;
+  font-weight: lighter;
+  text-align: center;
+}

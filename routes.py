@@ -228,7 +228,7 @@ def emailListOfPeople():
 			    from_email='podlinkedin@gmail.com',
 			    to_emails=nonParticipant['fields']['Email'],
 			    subject='LinkedIn Pod Sorter - Are you going to participate next week?',
-			    html_content=createEmailContent(record['Name'], emailList, utf8_to_base64(record["Email"]), optedIn=False)
+			    html_content=createEmailContent(nonParticipant['fields']['Name'], [], utf8_to_base64(nonParticipant['fields']["Email"]), optedIn=False)
 	  		)
 			)
 			print(response.status_code)

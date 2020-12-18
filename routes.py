@@ -134,19 +134,6 @@ def calculateProfilePairs():
 		)
 	return pairs
 
-def addPairsToAirtable(pairs):
-	airtablePairs = Airtable(environ.get('AIRTABLE_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
-	# clear every row from 'Pairs' table
-	airtablePairs.batch_delete([record['id'] for record in airtablePairs.get_all()])
-	# insert pairs (formatted into strings)
-	pairsJSON = [
-		{
-			"ID" : str(row["ID"]),
-			"Profiles" : ','.join(str(i) for i in row["Profiles"])
-		} for row in pairs
-	]
-	airtablePairs.batch_insert(pairsJSON)
-
 
 ##################################### EMAIL ####################################
 
@@ -287,7 +274,6 @@ def sendWeeklyEmails(pairs):
 @app.route('/calculate-pairs/' + environ.get('EMAIL_CODE'), methods=['POST'])
 def verifiedUser():
 	pairs = calculateProfilePairs()
-	addPairsToAirtable(pairs)
 	sendWeeklyEmails(pairs)
 	return redirect('/')
 

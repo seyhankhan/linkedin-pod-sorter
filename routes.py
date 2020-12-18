@@ -3,7 +3,8 @@
 ############ description
 ############ December 2020
 # save linkedin profile URLs as 1 standard
-
+# get requests are limited by 100. do batch instead
+# send at certain times: use 'personalizations' https://github.com/sendgrid/sendgrid-python/issues/401
 ################################ IMPORT MODULES ################################
 
 
@@ -54,6 +55,24 @@ def index():
 			return render_template('index.html', userAlreadySignedUp='True')
 		else:
 			airtable.insert(record)
+			errorOccured = sendEmail(Mail(
+				from_email=environ.get('FROM_EMAIL'),
+				to_emails=record["Email"],
+				subject="You're in! Welcome to LinkedIn Pod Sorter",
+				html_content=f"""
+					Thank you {record['Name']} for signing up
+					Just confirming your personal information:
+					<br>
+			    <br>Email: {record['Email']}
+			    <br>LinkedIn Profile: {record['LinkedIn Profile']}
+					<br>Time Zone: {record['Time Zone']}
+					<br>
+					<br>Regards,
+					<br>LinkedIn Pod Sorter
+				"""
+			))
+			if errorOccured == "Error":
+				pass
 			return redirect('/signup-confirmation')
 
 
@@ -90,69 +109,85 @@ def weekly_confirmation():
 ################################ CALCULATE PAIRS ###############################
 
 
-def calculatePairsOnAirtable():
-	airtable = Airtable(environ.get('AIRTABLE_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
-	participants = airtable.get_all(filterByFormula="NOT({Opted In}=Blank())")
+def calculateProfilePairs():
+	airtableParticipants = Airtable(environ.get('AIRTABLE_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
+	participants = airtableParticipants.get_all(filterByFormula="NOT({Opted In}=Blank())")
 	numParticipants = len(participants)
 
-	print(json_dumps(participants, indent=4))
 	shuffle(participants)
 
-	MAX_PAIRS_PER_PERSON = 14
-	if numParticipants < 14 + 1:
-		MAX_PAIRS_PER_PERSON = numParticipants - 1
-
-	# range of numbers from 1 to max pairs per person
+	MAX_PROFILES_PER_PERSON = 14
+	# range of numbers from 1 to max profiles per person
   # 1,2,3,4,5,6,7,8,9,10,11,12,13,14
+	profilePairIndices = range(1, min(MAX_PROFILES_PER_PERSON, numParticipants - 1) + 1)
+
 	pairs = []
+	# for each participant
 	for participantIndex in range(numParticipants):
-		pairs.append({
-			"ID": str(participants[participantIndex]['fields']["ID"]),
-			"This weeks pairs": ",".join(
-				str(participants[(participantIndex + indexPair + 1) % numParticipants]['fields']["ID"]) for indexPair in range(MAX_PAIRS_PER_PERSON)
-			)
-		})
+		pairs.append(
+			{
+				"ID": participants[participantIndex]['fields']["ID"],
+				"Profiles": [
+					participants[(participantIndex + i) % numParticipants]['fields']["ID"] for i in profilePairIndices
+				]
+			}
+		)
+	return pairs
 
+def addPairsToAirtable(pairs):
 	airtablePairs = Airtable(environ.get('AIRTABLE_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
-
+	# clear every row from 'Pairs' table
 	airtablePairs.batch_delete([record['id'] for record in airtablePairs.get_all()])
+	# insert pairs (formatted into strings)
+	pairsJSON = [
+		{
+			"ID" : str(row["ID"]),
+			"Profiles" : ','.join(str(i) for i in row["Profiles"])
+		} for row in pairs
+	]
+	airtablePairs.batch_insert(pairsJSON)
 
-	airtablePairs.batch_insert(pairs)
+
+##################################### EMAIL ####################################
 
 
-	print(json_dumps(pairs, indent=4))
-
-
-############################## EMAIL LIST OF PEOPLE ############################
-
-
-def createEmailContent(name, pairs, userHash, optedIn=True):
-	if optedIn:
+def createEmailHTML(name, userHash, pairs=None):
+	if pairs:
 		template = f"""
+			<!doctype html>
 			<html>
 				<head>
 					<meta charset="utf-8">
 					<meta name="author" content="Seyhan Van Khan">
 					<meta name="description" property="og:description" content="Your list of new LinkedIn profiles is here!">
 					<title>Pod Sorter for LinkedIn</title>
+					<style>
+						body {{
+							color: black;
+						}}
+					</style>
 				</head>
-				<body style="color:black">
+				<body>
 					Hey {name},
-					<br />
-					<br />
-					Click here to confirm your participation for the next week: https://linkedin-pod-sorter.herokuapp.com/topup?user={userHash}
-					<br />
-					The following participants will post on LinkedIn today - go and check out their activity
+					<br>
+					<br>
+					<a href="https://linkedin-pod-sorter.herokuapp.com/topup?user={userHash}" target="_blank">Click here to confirm your participation for next week</a>
+					<br>
+					<b>Here are this weeks {len(pairs)} LinkedIn profiles.</b>
 					<ul>
 		"""
 		for pair in pairs:
-			template += f"<li>{pair['Name']} - {pair['LinkedIn Profile']}</li>"
+			template += f"<li><a href='{pair['LinkedIn Profile']}' target='_blank'>{pair['Name']}</a></li>"
 
 		template += f"""
 					</ul>
+					<br>
+					Regards,<br>
+					LinkedIn Pod Sorter
 				</body>
 			</html>
 		"""
+
 	else:
 		template = f"""
 			<html>
@@ -161,85 +196,99 @@ def createEmailContent(name, pairs, userHash, optedIn=True):
 					<meta name="author" content="Seyhan Van Khan">
 					<meta name="description" property="og:description" content="Are you participating next week?">
 					<title>Pod Sorter for LinkedIn</title>
+					<style>
+						body {{
+							color: black;
+						}}
+					</style>
 				</head>
-				<body style="color:black">
+				<body>
 					Hey {name},
-					<br />
-					<br />
-					Click here to confirm your participation for next week: https://linkedin-pod-sorter.herokuapp.com/topup?user={userHash}
-					<br />
-					Linkedin Pod Sorter
+					<br>
+					<br>
+					<a href="https://linkedin-pod-sorter.herokuapp.com/topup?user={userHash}" target="_blank">Click here to confirm your participation for next week</a>
+					<br>
+					Regards,<br>
+					LinkedIn Pod Sorter
 				</body>
 			</html>
 		"""
 	return template
 
-def emailListOfPeople():
-	airtablePairs = Airtable(environ.get('AIRTABLE_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
-	pairs = airtablePairs.get_all()
 
+def sendEmail(message):
+	try:
+		sg = SendGridAPIClient(environ.get('SENDGRID_KEY'))
+		response = sg.send(message)
+		print('Status Code:', response.status_code)
+		print('Body:', response.body)
+		print('Headers:', response.headers)
+		return ''
+	except Exception as e:
+		print(e)
+		return 'Error'
+
+
+def sendWeeklyEmails(pairs):
 	airtableParticipants = Airtable(environ.get('AIRTABLE_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
+	# get list of participants that are currently opted in
 	participantsRAW = airtableParticipants.get_all(filterByFormula="NOT({Opted In}=Blank())")
-	participants = {record['fields']['ID']: record['fields'] for record in participantsRAW}
-	print(json_dumps(participants,indent=4))
+	participants = {
+		record['fields']['ID'] : record['fields'] for record in participantsRAW
+	}
+
+	# create each email
 	messages = []
 	# for each person in the table
 	for pair in pairs:
-		# record of participant to send to
-		record = participants[int(pair["fields"]["ID"])]
-		# parse the list of pairs in pairs column into LIST OF PARTICIPANT IDs
+		# record of receiver participant who is being SENT email
+		receiverRecord = participants[pair["ID"]]
 		# make a list with each participant ID's record
-		# these are participants that the person above has to comment & like for
-		emailList = [participants[int(id)] for id in pair["fields"]["This weeks pairs"].split(',')]
+		# list of participants' records that receiver participant has to interact with
+		emailList = [
+			participants[id] for id in pair["Profiles"]
+		]
 
 		messages.append(
 			Mail(
 		    from_email=environ.get('FROM_EMAIL'),
-		    to_emails=record['Email'],
-		    subject='LinkedIn Pod Sorter - Your LinkedIn profiles for this week',
-		    html_content=createEmailContent(record['Name'], emailList, utf8_to_base64(record["Email"]))
+		    to_emails=receiverRecord['Email'],
+		    subject='Your LinkedIn profiles for this week | LinkedIn Pod Sorter',
+		    html_content=createEmailHTML(
+					receiverRecord['Name'],
+					utf8_to_base64(receiverRecord["Email"]),
+					emailList
+				)
 	  	)
 		)
-	print(messages)
 
+	# now send each email
+	# if error occurs, output & end the function
 	for message in messages:
-		try:
-			sg = SendGridAPIClient(environ.get('SENDGRID_KEY'))
-			response = sg.send(message)
-			print(response.status_code)
-			print(response.body)
-			print(response.headers)
-		except Exception as e:
-			print(e)
+		if sendEmail(message) == 'Error':
 			return
 
+	# email all non participants asking to confirm participation for next week
 	nonparticipants = airtableParticipants.get_all(filterByFormula="{Opted In}=Blank()")
 	for nonParticipant in nonparticipants:
-		try:
-			sg = SendGridAPIClient(environ.get('SENDGRID_KEY'))
-			response = sg.send(
-				Mail(
-			    from_email=environ.get('FROM_EMAIL'),
-			    to_emails=nonParticipant['fields']['Email'],
-			    subject='LinkedIn Pod Sorter - Are you going to participate next week?',
-			    html_content=createEmailContent(nonParticipant['fields']['Name'], [], utf8_to_base64(nonParticipant['fields']["Email"]), optedIn=False)
-	  		)
-			)
-			print(response.status_code)
-			print(response.body)
-			print(response.headers)
-		except Exception as e:
-			print(e)
+		errorOccured = sendEmail(Mail(
+			from_email=environ.get('FROM_EMAIL'),
+			to_emails=nonParticipant['fields']['Email'],
+			subject='Are you participating next week? | LinkedIn Pod Sorter',
+			html_content=createEmailHTML(nonParticipant['fields']['Name'], utf8_to_base64(nonParticipant['fields']["Email"]))
+		))
+		if errorOccured == "Error":
 			return
 
 
-######################## EMAIL ROUTE TO BE OPENED AT 8AM #######################
+##################### EMAIL ROUTE TO BE OPENED EVERY WEEK ######################
 
 
 @app.route('/calculate-pairs/' + environ.get('EMAIL_CODE'), methods=['POST'])
 def verifiedUser():
-	calculatePairsOnAirtable()
-	emailListOfPeople()
+	pairs = calculateProfilePairs()
+	addPairsToAirtable(pairs)
+	sendWeeklyEmails(pairs)
 	return redirect('/')
 
 

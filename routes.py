@@ -304,4 +304,5 @@ def verifiedUser():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+	print("\n\n\n\nyello there\n\n\n\n")
+	app.run(debug=True)

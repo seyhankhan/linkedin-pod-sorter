@@ -2,39 +2,35 @@
 ############ Linkedin Pod Sorter
 ############ description
 ############ December 2020
-############ github.com/seyhanvankhan
 # save linkedin profile URLs as 1 standard
 
 ################################ IMPORT MODULES ################################
 
 
-from flask import Flask, render_template, redirect, request, session, url_for
-
-from airtable import Airtable
-import base64
-import os
+from base64 import b64decode, b64encode
+from datetime import datetime
+from json import dumps as json_dumps
+from os import environ
 from random import shuffle
 
-from datetime import datetime
-
-import json
+from airtable import Airtable
+from flask import Flask, render_template, redirect, request
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
 
 def base64_to_utf8(letters):
 	letters += "=" * (4 - len(letters) % 4)
-	return base64.b64decode(letters.encode()).decode()
+	return b64decode(letters.encode()).decode()
 
 def utf8_to_base64(letters):
-	return base64.b64encode(letters.encode("utf-8")).decode("utf-8").replace("=","")
+	return b64encode(letters.encode("utf-8")).decode("utf-8").replace("=","")
 
 
 ################################### INIT APP ###################################
 
 
 app = Flask(__name__)
-
 app.secret_key = "s14a"
 
 
@@ -46,7 +42,7 @@ def index():
 	if request.method == 'GET':
 		return render_template('index.html')
 	else:
-		airtable = Airtable('app5XId2pkAooWqJZ', 'Participants', os.environ.get('AIRTABLE_KEY'))
+		airtable = Airtable(environ.get('AIRTABLE_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
 		record = {
 	    "Name": request.form["name"],
 	    "Email": request.form["email"],
@@ -74,7 +70,7 @@ def signup_confirmation():
 
 @app.route('/topup')
 def topup_email_base64():
-	airtable = Airtable('app5XId2pkAooWqJZ', 'Participants', os.environ.get('AIRTABLE_KEY'))
+	airtable = Airtable(environ.get('AIRTABLE_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
 	matchingRecord = airtable.match("Email", base64_to_utf8(request.args['user']))
 
 	if matchingRecord:
@@ -95,12 +91,11 @@ def weekly_confirmation():
 
 
 def calculatePairsOnAirtable():
-	import json
-	airtable = Airtable('app5XId2pkAooWqJZ', 'Participants', os.environ.get('AIRTABLE_KEY'))
+	airtable = Airtable(environ.get('AIRTABLE_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
 	participants = airtable.get_all(filterByFormula="NOT({Opted In}=Blank())")
 	numParticipants = len(participants)
 
-	print(json.dumps(participants, indent=4))
+	print(json_dumps(participants, indent=4))
 	shuffle(participants)
 
 	MAX_PAIRS_PER_PERSON = 14
@@ -118,14 +113,14 @@ def calculatePairsOnAirtable():
 			)
 		})
 
-	airtablePairs = Airtable('app5XId2pkAooWqJZ', 'Pairs', os.environ.get('AIRTABLE_KEY'))
+	airtablePairs = Airtable(environ.get('AIRTABLE_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
 
 	airtablePairs.batch_delete([record['id'] for record in airtablePairs.get_all()])
 
 	airtablePairs.batch_insert(pairs)
 
 
-	print(json.dumps(pairs, indent=4))
+	print(json_dumps(pairs, indent=4))
 
 
 ############################## EMAIL LIST OF PEOPLE ############################
@@ -180,13 +175,13 @@ def createEmailContent(name, pairs, userHash, optedIn=True):
 	return template
 
 def emailListOfPeople():
-	airtablePairs = Airtable('app5XId2pkAooWqJZ', 'Pairs', os.environ.get('AIRTABLE_KEY'))
+	airtablePairs = Airtable(environ.get('AIRTABLE_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
 	pairs = airtablePairs.get_all()
 
-	airtableParticipants = Airtable('app5XId2pkAooWqJZ', 'Participants', os.environ.get('AIRTABLE_KEY'))
+	airtableParticipants = Airtable(environ.get('AIRTABLE_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
 	participantsRAW = airtableParticipants.get_all(filterByFormula="NOT({Opted In}=Blank())")
 	participants = {record['fields']['ID']: record['fields'] for record in participantsRAW}
-	print(json.dumps(participants,indent=4))
+	print(json_dumps(participants,indent=4))
 	messages = []
 	# for each person in the table
 	for pair in pairs:
@@ -196,21 +191,20 @@ def emailListOfPeople():
 		# make a list with each participant ID's record
 		# these are participants that the person above has to comment & like for
 		emailList = [participants[int(id)] for id in pair["fields"]["This weeks pairs"].split(',')]
-		print(json.dumps(emailList, indent=4))
 
 		messages.append(
 			Mail(
-		    from_email='podlinkedin@gmail.com',
+		    from_email=environ.get('FROM_EMAIL'),
 		    to_emails=record['Email'],
 		    subject='LinkedIn Pod Sorter - Your LinkedIn profiles for this week',
 		    html_content=createEmailContent(record['Name'], emailList, utf8_to_base64(record["Email"]))
 	  	)
 		)
-		print(messages)
+	print(messages)
 
 	for message in messages:
 		try:
-			sg = SendGridAPIClient(os.environ.get('SENDGRID_KEY'))
+			sg = SendGridAPIClient(environ.get('SENDGRID_KEY'))
 			response = sg.send(message)
 			print(response.status_code)
 			print(response.body)
@@ -222,10 +216,10 @@ def emailListOfPeople():
 	nonparticipants = airtableParticipants.get_all(filterByFormula="{Opted In}=Blank()")
 	for nonParticipant in nonparticipants:
 		try:
-			sg = SendGridAPIClient(os.environ.get('SENDGRID_KEY'))
+			sg = SendGridAPIClient(environ.get('SENDGRID_KEY'))
 			response = sg.send(
 				Mail(
-			    from_email='podlinkedin@gmail.com',
+			    from_email=environ.get('FROM_EMAIL'),
 			    to_emails=nonParticipant['fields']['Email'],
 			    subject='LinkedIn Pod Sorter - Are you going to participate next week?',
 			    html_content=createEmailContent(nonParticipant['fields']['Name'], [], utf8_to_base64(nonParticipant['fields']["Email"]), optedIn=False)
@@ -242,7 +236,7 @@ def emailListOfPeople():
 ######################## EMAIL ROUTE TO BE OPENED AT 8AM #######################
 
 
-@app.route('/calculate-pairs/iksalzcewyhdpmnjftqr', methods=['POST'])
+@app.route('/calculate-pairs/' + environ.get('EMAIL_CODE'), methods=['POST'])
 def verifiedUser():
 	calculatePairsOnAirtable()
 	emailListOfPeople()

@@ -1,2 +1,2 @@
-# linkedin-pod-sorter
+# Pod Sorter for LinkedIn
 

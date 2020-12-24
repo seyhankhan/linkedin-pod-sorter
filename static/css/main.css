@@ -35,6 +35,7 @@ h1 {
   font-size: 3em;
   font-weight: lighter;
   text-align: center;
+  white-space: nowrap;
 }
 
 @media (max-width: 644px) {
@@ -59,6 +60,17 @@ h2 {
   margin: 0;
   font-weight: lighter;
   text-align: center;
+}
+
+.unselectable, img {
+  -webkit-user-select: none;  /* Chrome all / Safari all */
+  -moz-user-select: none;     /* Firefox all */
+  -ms-user-select: none;      /* IE 10+ */
+  user-select: none;          /* Likely future */
+}
+
+img {
+  pointer-events: none;
 }
 
 /* -------------------------------------------------------------------------- */

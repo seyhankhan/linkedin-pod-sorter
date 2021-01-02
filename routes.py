@@ -2,15 +2,23 @@
 ############ Linkedin Pod Sorter
 ############ description
 ############ December 2020
-# TURN OPTED IN OFF FOR ALL
+# TURN 'OPTED IN' OFF FOR ALL
 # save linkedin profile URLs as 1 standard
 # get requests are limited by 100? do batch instead
-# send at certain times: use 'personalizations' github.com/sendgrid/sendgrid-python/issues/401
-# button for feedback
-# this is low quality post/high quality post
-# separate groups into 2 different links
-# change airtable table
+# (if using sendgrid, use 'personalizations' github.com/sendgrid/sendgrid-python/issues/401)
+"""
+send at certain times
+	bi-weekly wayscript runs script to schedule emails
+button for feedback
+this is low quality post/high quality post
+separate groups into 2 different links
+	/sandbox
+	/
 
+on emails:
+
+
+"""
 ################################ IMPORT MODULES ################################
 
 
@@ -121,8 +129,8 @@ Which day would you like to receive next weeks email?
  --------        ---------        -----------        ----------        --------
 
 Here are your 14 profiles for this week of (21 Dec - 25 Dec):
--
--
+- Steve Johnson (High Quality Post | Low Quality Post)
+- etc
 -
 -
 

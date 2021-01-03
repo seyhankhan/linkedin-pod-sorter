@@ -48,6 +48,30 @@ def addPairsToAirtable(pairs):
 
 ##################################### EMAIL ####################################
 
+def CreateEmail(name, formLink, week, peopleToCommentOn, peopleThatWillComment):
+	subject = 'Your LinkedIn profiles to interact with | '+week+' | LinkedIn Pod Sorter'
+	f"""
+Hey {name},
+
+Feedback form for this week: {feedbackFormURL}
+
+Which day would you like to receive next weeks email?
+(Loved this post | Not easy to comment on | Post missing)
+(thoughtful | Used hashtags or tagged name | Comment missing)
+
+
+
+Here are your 4 profiles for this week of 21 - 25 Dec:
+- Steve Johnson
+
+
+These 4 people will interact with your posts:
+- Billy Bobinson
+
+
+	"""
+##################################### EMAIL ####################################
+
 
 def createEmailHTML(name, userHash, pairs=None):
 	if pairs:

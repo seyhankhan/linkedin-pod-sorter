@@ -1,0 +1,44 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Seyhan Van Khan">
+    <meta name="description" property="og:description" content="Your list of new LinkedIn profiles is here!">
+		<title>Your LinkedIn profiles to interact with | {% week %} | LinkedIn Pod Sorter</title>
+	</head>
+	<body style="background-color:#ffffff;color:#000000">
+    <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
+      Hey {% name %}, your {% len(peopleToCommentOn) %} Linkedin Profiles are here!
+    </div>
+    Hey {% name %},
+    <br>
+    <br>
+    <a href="https://linkedin-pod-sorter.herokuapp.com/topup?user={% userHash %}" target="_blank">Click here to confirm your participation for next week</a>
+    <br>
+    <br>
+    <b>Here are this weeks {% len(peopleToCommentOn) %} LinkedIn profiles to interact with ({% week %})</b>
+    <ul>
+      {% for profile in peopleToCommentOn %}
+        <li><a href='{% profile["URL"] %}' target='_blank'>{% profile["Name"] %}</a></li>
+      {% endfor %}
+    </ul>
+    <br>
+    <b>These {% len(peopleThatWillComment) %} people will interact with your profile this week</b>
+    <ul>
+      {% for profile in peopleThatWillComment %}
+        <li><a href='{% profile["URL"] %}' target='_blank'>{% profile["Name"] %}</a></li>
+      {% endfor %}
+    </ul>
+
+    <a href="https://linkedin-pod-sorter.herokuapp.com/feedback?user={% userHash %}" target="_blank">Posts feedback form</a>
+    <br>
+    <br>
+    <br>
+    Regards,<br>
+    LinkedIn Pod Sorter
+    <br>
+    <br>
+    <a href="mailto:podlinkedin@gmail.com?subject=Unsubscribe {% name %}">Unsubscribe</a>
+  </body>
+</html>

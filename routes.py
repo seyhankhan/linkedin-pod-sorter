@@ -120,20 +120,7 @@ def weekly_confirmation():
 
 ##################### EMAIL ROUTE TO BE OPENED EVERY WEEK ######################
 
-
 """
-Weekly Email:
-Which day would you like to receive next weeks email?
- --------        ---------        -----------        ----------        --------
-| Monday |      | Tuesday |      | Wednesday |      | Thursday |      | Friday |
- --------        ---------        -----------        ----------        --------
-
-Here are your 14 profiles for this week of (21 Dec - 25 Dec):
-- Steve Johnson (High Quality Post | Low Quality Post)
-- etc
--
--
-
 TIMELINE:
 Sunday, 00:00 UTC
 		All pairs are calculated

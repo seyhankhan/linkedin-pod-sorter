@@ -4,7 +4,6 @@ from airtable import Airtable
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
-
 ################################ CALCULATE PAIRS ###############################
 
 
@@ -70,72 +69,6 @@ These 4 people will interact with your posts:
 
 
 	"""
-##################################### EMAIL ####################################
-
-
-def createEmailHTML(name, userHash, pairs=None):
-	if pairs:
-		template = f"""
-			<!doctype html>
-			<html>
-				<head>
-					<meta charset="utf-8">
-					<meta name="author" content="Seyhan Van Khan">
-					<meta name="description" property="og:description" content="Your list of new LinkedIn profiles is here!">
-					<title>Pod Sorter for LinkedIn</title>
-					<style>
-						body {{
-							color: black;
-						}}
-					</style>
-				</head>
-				<body>
-					Hey {name},
-					<br>
-					<br>
-					<a href="https://linkedin-pod-sorter.herokuapp.com/topup?user={userHash}" target="_blank">Click here to confirm your participation for next week</a>
-					<br>
-					<b>Here are this weeks {len(pairs)} LinkedIn profiles.</b>
-					<ul>
-		"""
-		for pair in pairs:
-			template += f"<li><a href='{pair['LinkedIn Profile']}' target='_blank'>{pair['Name']}</a></li>"
-
-		template += f"""
-					</ul>
-					<br>
-					Regards,<br>
-					LinkedIn Pod Sorter
-				</body>
-			</html>
-		"""
-
-	else:
-		template = f"""
-			<html>
-				<head>
-					<meta charset="utf-8">
-					<meta name="author" content="Seyhan Van Khan">
-					<meta name="description" property="og:description" content="Are you participating next week?">
-					<title>Pod Sorter for LinkedIn</title>
-					<style>
-						body {{
-							color: black;
-						}}
-					</style>
-				</head>
-				<body>
-					Hey {name},
-					<br>
-					<br>
-					<a href="https://linkedin-pod-sorter.herokuapp.com/topup?user={userHash}" target="_blank">Click here to confirm your participation for next week</a>
-					<br>
-					Regards,<br>
-					LinkedIn Pod Sorter
-				</body>
-			</html>
-		"""
-	return template
 
 
 def sendEmail(message):

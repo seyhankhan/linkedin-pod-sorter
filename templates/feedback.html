@@ -1,0 +1,110 @@
+{% extends "layout.html" %}
+
+{% block body %}
+
+
+<style>
+  h2 {
+    margin-bottom: 32px
+  }
+</style>
+
+
+<script type="text/javascript">
+  $(document).ready(() => {
+    $('.ui.checkbox').checkbox();
+
+    $('#feedbackForm').form({
+      fields: {
+        name: 'empty',
+        email: 'email',
+        linkedinProfile: 'regExp[/^(http(s)?:\/\/)?(www\.)?linkedin\.com\/(in|company)\/[A-z0-9_-]+\/?/i]',
+        dayPreference: 'empty',
+        timezone: 'empty'
+      }
+    });
+  });
+</script>
+
+<div id="theContainer">
+  <div id="theTitle">
+    <img id="linkedin-logo" src="static/img/linkedin.png">
+    <h1>LinkedIn Pod Sorter</h1>
+  </div>
+
+  <div id="formContainer">
+    <h2>Post/Comment Feedback</h2>
+
+    <form id="feedbackForm" class="ui form" method="POST" action="/feedback">
+      {% for person in peopleToCommentOn %}
+        <label for="group-{{ person['ID'] }}">{{ person["Name"] }}:</label>
+        <div name="group-{{ person['ID'] }}" class="grouped fields">
+          <div class="field">
+            <div class="ui checkbox">
+              <input type="checkbox" name="Loved this post-{{ person['ID'] }}" tabindex="0" class="hidden">
+              <label>Loved this post</label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="ui checkbox">
+              <input type="checkbox" name="Not easy to comment on-{{ person['ID'] }}" tabindex="0" class="hidden">
+              <label>Not easy to comment on</label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="ui checkbox">
+              <input type="checkbox" name="Post missing-{{ person['ID'] }}" tabindex="0" class="hidden">
+              <label>Post missing</label>
+            </div>
+          </div>
+        </div>
+        <br>
+      {% endfor %}
+
+      <hr>
+      <br>
+
+      {% for person in peopleThatWillComment %}
+        <label for="group-{{ person['ID'] }}">{{ person["Name"] }}:</label>
+        <div name="group-{{ person['ID'] }}" class="grouped fields">
+          <div class="field">
+            <div class="ui checkbox">
+              <input type="checkbox" name="Thoughtful comment-{{ person['ID'] }}" tabindex="0" class="hidden">
+              <label>Thoughtful comment</label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="ui checkbox">
+              <input type="checkbox" name="Used hashtags/tagged name-{{ person['ID'] }}" tabindex="0" class="hidden">
+              <label>Used hashtags or tagged name</label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="ui checkbox">
+              <input type="checkbox" name="Comment missing-{{ person['ID'] }}" tabindex="0" class="hidden">
+              <label>Comment missing</label>
+            </div>
+          </div>
+        </div>
+        <br>
+      {% endfor %}
+
+      <div id="buttonContainer">
+        <button class="ui primary button">Submit</button>
+      </div>
+
+      {% if userAlreadyGivenFeedback is defined and userAlreadyGivenFeedback %}
+        <div id="alreadySignedUpErrorBox" class="ui negative message">
+          <div class="header">
+            You've already given us feedback for this week!
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="ui error message">
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

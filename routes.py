@@ -53,21 +53,14 @@ def index():
 			return render_template('index.html', userAlreadySignedUp='True')
 		else:
 			airtable.insert(record)
-			errorOccured = sendEmail(Mail(
-				from_email=environ.get('FROM_EMAIL'),
-				to_emails=record["Email"],
+			errorOccured = sendEmail(Email(
+				to=record["Email"],
 				subject="You're in! Welcome to LinkedIn Pod Sorter",
-				html_content=f"""
-					Thank you {record['Name']} for signing up
-					Just confirming your personal information:
-					<br>
-			    <br>Email: {record['Email']}
-			    <br>LinkedIn Profile: {record['LinkedIn Profile']}
-					<br>Time Zone: {record['Time Zone']}
-					<br>
-					<br>Regards,
-					<br>LinkedIn Pod Sorter
-				"""
+				html=render_template(
+					"signup-email.html",
+					name=record['Name'],
+					weekday=record['Day Preference']
+				)
 			))
 			if errorOccured == "Error":
 				pass
@@ -127,11 +120,7 @@ def weeklyEmailCalculation_Sunday():
 	return redirect("/")
 
 
-
-
-
 ################################### WEDNESDAY ##################################
-
 
 
 # covers Wednesday 00:00 UTC to Friday 23:59 UTC

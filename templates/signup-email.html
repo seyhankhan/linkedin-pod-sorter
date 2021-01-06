@@ -1,0 +1,33 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Seyhan Van Khan">
+    <meta name="description" property="og:description" content="Hey {{ name }}, welcome to LinkedIn Pod Sorter!">
+	</head>
+	<body style="background-color:#ffffff;color:#000000">
+    <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
+			{% if group == "Sandbox" %}
+				Fellow Sandboxer, welcome to Pod Sorter and the {{ weekday }} group.
+			{% else %}
+				Welcome to LinkedIn Pod Sorter and the {{ weekday }} group.
+			{% endif %}
+    </div>
+    Hey {{ name }},
+    <br>
+		<br>
+		{% if group == "Sandbox" %}
+			Thank you for signing up fellow Sandboxer and welcome to the {{ weekday }} group.
+		{% else %}
+			Thank you for signing up to the {{ weekday }} group.
+		{% endif %}
+		<br>
+		<br>
+    Regards,<br>
+    LinkedIn Pod Sorter
+    <br>
+    <br>
+    <a href="mailto:podlinkedin@gmail.com?subject=Unsubscribe {{ name }}">Unsubscribe</a>
+  </body>
+</html>

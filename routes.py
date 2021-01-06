@@ -59,7 +59,8 @@ def index():
 				html=render_template(
 					"signup-email.html",
 					name=record['Name'],
-					weekday=record['Day Preference']
+					weekday=record['Day Preference'],
+					group=record['Group']
 				)
 			))
 			if errorOccured == "Error":

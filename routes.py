@@ -40,7 +40,7 @@ def index():
 	else:
 		group = "Sandbox" if request.path and "sandbox" in request.path else "Public"
 
-		airtable = Airtable(environ.get('AIRTABLE_WANDERN_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
+		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
 		record = {
 	    "Name": request.form["name"],
 	    "Email": request.form["email"],

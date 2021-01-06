@@ -121,7 +121,6 @@ def specialThursdayThing():
 	# now send each email
 	# if error occurs, output & stop sending emails
 	for email in emails:
-		break
 		if sendEmail(email) == 'Error':
 			break
 

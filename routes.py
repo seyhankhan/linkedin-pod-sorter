@@ -38,7 +38,7 @@ def index():
 	if request.method == 'GET':
 		return render_template('index.html')
 	else:
-		group = "Sandbox" if "sandbox" in request.path else "Public"
+		group = "Sandbox" if request.path and "sandbox" in request.path else "Public"
 
 		airtable = Airtable(environ.get('AIRTABLE_WANDERN_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
 		record = {

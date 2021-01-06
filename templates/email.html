@@ -4,41 +4,46 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="author" content="Seyhan Van Khan">
-    <meta name="description" property="og:description" content="Your list of new LinkedIn profiles is here!">
-		<title>Your LinkedIn profiles to interact with | {% week %} | LinkedIn Pod Sorter</title>
+    <meta name="description" property="og:description" content="Hey {{ name }}, your list of new LinkedIn profiles is here!">
 	</head>
 	<body style="background-color:#ffffff;color:#000000">
     <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
-      Hey {% name %}, your {% len(peopleToCommentOn) %} Linkedin Profiles are here!
+			{% if participating %}
+				Hey {{ name }}, your {{ peopleToCommentOn|length }} Linkedin Profiles are here!
+			{% else %}
+				Hey {{ name }}, are you participating next week? Let us know by clicking this link.
+			{% endif %}
     </div>
-    Hey {% name %},
+    Hey {{ name }},
     <br>
     <br>
-    <a href="https://linkedin-pod-sorter.herokuapp.com/topup?user={% userHash %}" target="_blank">Click here to confirm your participation for next week</a>
-    <br>
-    <br>
-    <b>Here are this weeks {% len(peopleToCommentOn) %} LinkedIn profiles to interact with ({% week %})</b>
-    <ul>
-      {% for profile in peopleToCommentOn %}
-        <li><a href='{% profile["URL"] %}' target='_blank'>{% profile["Name"] %}</a></li>
-      {% endfor %}
-    </ul>
-    <br>
-    <b>These {% len(peopleThatWillComment) %} people will interact with your profile this week</b>
-    <ul>
-      {% for profile in peopleThatWillComment %}
-        <li><a href='{% profile["URL"] %}' target='_blank'>{% profile["Name"] %}</a></li>
-      {% endfor %}
-    </ul>
-
-    <a href="https://linkedin-pod-sorter.herokuapp.com/feedback?user={% userHash %}" target="_blank">Posts feedback form</a>
-    <br>
-    <br>
-    <br>
+		<br>
+		<a href="http://linkedin-pod-sorter.herokuapp.com/topup?user={{ userHash }}" target="_blank">Click here to confirm your participation for next week</a>
+		<br>
+		<br>
+		{% if participating %}
+			<b>Here are this weeks {{ peopleToCommentOn|length }} LinkedIn profiles to interact with ({{ week }})</b>
+	    <ul>
+	      {% for id in peopleToCommentOn %}
+	        <li><a href='{{ participants[id]["LinkedIn Profile"] }}' target='_blank'>{{ participants[id]["Name"] }}</a></li>
+	      {% endfor %}
+	    </ul>
+	    <br>
+	    <b>These {{ peopleThatWillComment|length }} people will interact with your profile this week ({{ week }})</b>
+	    <ul>
+	      {% for id in peopleThatWillComment %}
+	        <li><a href='{{ participants[id]["LinkedIn Profile"] }}' target='_blank'>{{ participants[id]["Name"] }}</a></li>
+	      {% endfor %}
+	    </ul>
+   	<br>
+		<a href="http://linkedin-pod-sorter.herokuapp.com/feedback?user={{ userHash }}" target="_blank">Give feedback this week's profiles</a>
+		{% endif %}
+		<br>
+		<br>
     Regards,<br>
     LinkedIn Pod Sorter
     <br>
     <br>
-    <a href="mailto:podlinkedin@gmail.com?subject=Unsubscribe {% name %}">Unsubscribe</a>
+    <a href="mailto:podlinkedin@gmail.com?subject=Unsubscribe {{ name }}">Unsubscribe</a>
   </body>
 </html>

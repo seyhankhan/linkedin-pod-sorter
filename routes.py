@@ -40,7 +40,7 @@ def index():
 	else:
 		group = "Sandbox" if request.path and "sandbox" in request.path else "GTeX"
 
-		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
 		record = {
 	    "Name": request.form["name"],
 	    "Email": request.form["email"],
@@ -51,14 +51,15 @@ def index():
 		if airtable.match('Email', request.form["email"]) or airtable.match('LinkedIn Profile', request.form["linkedinProfile"]):
 			return render_template('index.html', userAlreadySignedUp='True')
 		else:
-			airtable.insert(record)
+			newRow = airtable.insert(record)
 			errorOccured = sendEmail(Email(
 				to=record["Email"],
 				subject="POD Confirmation",
 				html=render_template(
 					"signup-email.html",
 					name=record['Name'],
-					group=record['Group']
+					group=record['Group'],
+					userHash=hashID(newRow['fields']['ID'])
 				)
 			))
 			if errorOccured == "Error":
@@ -127,7 +128,7 @@ Wednesday, 00:00 UTC
 # @app.route('/wednesday/' + environ.get('EMAIL_CODE'), methods=['POST'])
 # def weeklyEmailCalculation_Wednesday():
 # 	# get list of participants
-# 	airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
+# 	airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
 #
 # 	airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
 # 	pairs = [
@@ -151,20 +152,14 @@ Wednesday, 00:00 UTC
 #################################### TOPUP #####################################
 
 
-@app.route('/topup', methods=['GET','POST'])
+@app.route('/topup')
 def topup():
-	if request.method == "GET":
-		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
-		render_template(
-			"topup.html",
-			userHash=request.args['user'],
-		)
+	airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
 
-	else: # POST
-		matchingRecord = airtable.match("ID", unhashID(request.args['user']))
-		if matchingRecord:
-			airtable.update(matchingRecord['id'], {'Opted In': True, "Day Preference": request.form['dayPreference']})
-		return redirect('/weeklyconfirmation')
+	matchingRecord = airtable.match("ID", unhashID(request.args['user']))
+	if matchingRecord:
+		airtable.update(matchingRecord['id'], {'Opted In': True, 'Day Preference': 'Thursday'})
+	return redirect('/weeklyconfirmation')
 
 
 ############################## TOPUP CONFIRMATION ##############################
@@ -189,7 +184,7 @@ def topup_confirmation():
 # 			return redirect("/")
 # 		userID = unhashID(request.args['user'])
 #
-# 		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
+# 		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
 # 		airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
 #
 # 		# get list of participants that are currently opted in
@@ -212,7 +207,7 @@ def topup_confirmation():
 # 			userHash=request.args['user']
 # 		)
 # 	else: # POST
-# 		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
+# 		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
 #
 # 		# get list of participants that are currently opted in
 # 		participants = {

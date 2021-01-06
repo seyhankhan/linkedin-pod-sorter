@@ -38,15 +38,14 @@ def index():
 	if request.method == 'GET':
 		return render_template('index.html')
 	else:
-		group = "Sandbox" if request.path and "sandbox" in request.path else "Public"
+		group = "Sandbox" if request.path and "sandbox" in request.path else "GTeX"
 
-		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
+		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
 		record = {
 	    "Name": request.form["name"],
 	    "Email": request.form["email"],
 	    "LinkedIn Profile": request.form["linkedinProfile"],
-			"Day Preference": request.form["dayPreference"],
-			"Time Zone": int(request.form["timezone"]),
+			"Time Zone": request.form["timezone"],
 			"Group": group
 		}
 		if airtable.match('Email', request.form["email"]) or airtable.match('LinkedIn Profile', request.form["linkedinProfile"]):
@@ -55,11 +54,10 @@ def index():
 			airtable.insert(record)
 			errorOccured = sendEmail(Email(
 				to=record["Email"],
-				subject="You're in! Welcome to LinkedIn Pod Sorter",
+				subject="POD Confirmation",
 				html=render_template(
 					"signup-email.html",
 					name=record['Name'],
-					weekday=record['Day Preference'],
 					group=record['Group']
 				)
 			))
@@ -90,79 +88,83 @@ Wednesday, 00:00 UTC
 		Send all remaining scheduled emails up to Friday 23:59 UTC
 """
 
-# covers Sunday 0000 UTC to Tuesday 23:59 UTC
-# first email is sent Sunday 19:30 UTC (New Zealand)
-@app.route('/sunday/')# + environ.get('EMAIL_CODE'), methods=['POST'])
-def weeklyEmailCalculation_Sunday():
-	# get list of participants
-	airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
-
-	pairs = []
-	for group in ['Sandbox','Public']:
-		pairs.extend(calculateProfilePairs(group, airtableParticipants))
-
-	addPairsToAirtable(pairs)
-
-	emails = createParticipantEmails("Sunday", render_template, pairs, airtableParticipants)
-	emails.append(createNonParticipantEmails(render_template, airtableParticipants))
-
-	# now send each email
-	# if error occurs, output & stop sending emails
-	for email in emails:
-		sendEmail(email)
-		break
-		if sendEmail(email) == 'Error':
-			break
-
-	# make everyone now OPTED OUT
-	# if they want to opt back in, they will need to click link in email
-	optOutEveryone(airtableParticipants)
-
-	return redirect("/")
-
-
-################################### WEDNESDAY ##################################
-
-
-# covers Wednesday 00:00 UTC to Friday 23:59 UTC
-# last email is sent at Friday 17:30 UTC (Hawaii)
-@app.route('/wednesday/' + environ.get('EMAIL_CODE'), methods=['POST'])
-def weeklyEmailCalculation_Wednesday():
-	# get list of participants
-	airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
-
-	airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
-	pairs = [
-		{
-			'ID': 								row['fields']['ID'],
-			'Profiles' : 				 	[int(id) for id in row['fields']['Profiles'].split(",")],
-			'Profiles Assigned' : [int(id) for id in row['fields']['Profiles Assigned'].split(",")],
-		} for row in airtablePairs.get_all()
-	]
-
-	emails = createParticipantEmails("Wednesday", render_template, pairs, airtableParticipants)
-	# now send each email
-	# if error occurs, output & end the function
-	for email in emails:
-		if sendEmail(email) == 'Error':
-			return
-
-	return redirect('/')
+# # covers Sunday 0000 UTC to Tuesday 23:59 UTC
+# # first email is sent Sunday 19:30 UTC (New Zealand)
+# @app.route('/sunday/')# + environ.get('EMAIL_CODE'), methods=['POST'])
+# def weeklyEmailCalculation_Sunday():
+# 	# get list of participants
+# 	airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Members', environ.get('AIRTABLE_KEY'))
+#
+# 	pairs = []
+# 	for group in ['Sandbox','Public']:
+# 		pairs.extend(calculateProfilePairs(group, airtableParticipants))
+#
+# 	addPairsToAirtable(pairs)
+#
+# 	emails = createParticipantEmails("Sunday", render_template, pairs, airtableParticipants)
+# 	emails.append(createNonParticipantEmails(render_template, airtableParticipants))
+#
+# 	# now send each email
+# 	# if error occurs, output & stop sending emails
+# 	for email in emails:
+# 		sendEmail(email)
+# 		break
+# 		if sendEmail(email) == 'Error':
+# 			break
+#
+# 	# make everyone now OPTED OUT
+# 	# if they want to opt back in, they will need to click link in email
+# 	optOutEveryone(airtableParticipants)
+#
+# 	return redirect("/")
+#
+#
+# ################################### WEDNESDAY ##################################
+#
+#
+# # covers Wednesday 00:00 UTC to Friday 23:59 UTC
+# # last email is sent at Friday 17:30 UTC (Hawaii)
+# @app.route('/wednesday/' + environ.get('EMAIL_CODE'), methods=['POST'])
+# def weeklyEmailCalculation_Wednesday():
+# 	# get list of participants
+# 	airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
+#
+# 	airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
+# 	pairs = [
+# 		{
+# 			'ID': 								row['fields']['ID'],
+# 			'Profiles' : 				 	[int(id) for id in row['fields']['Profiles'].split(",")],
+# 			'Profiles Assigned' : [int(id) for id in row['fields']['Profiles Assigned'].split(",")],
+# 		} for row in airtablePairs.get_all()
+# 	]
+#
+# 	emails = createParticipantEmails("Wednesday", render_template, pairs, airtableParticipants)
+# 	# now send each email
+# 	# if error occurs, output & end the function
+# 	for email in emails:
+# 		if sendEmail(email) == 'Error':
+# 			return
+#
+# 	return redirect('/')
 
 
 #################################### TOPUP #####################################
 
 
-@app.route('/topup')
+@app.route('/topup', methods=['GET','POST'])
 def topup():
-	# add case if no user is provided
-	airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
-	if 'user' not in request.args:
-		return redirect("/")
-	matchingRecord = airtable.match("ID", unhashID(request.args['user']))
-	if matchingRecord:
-		airtable.update(matchingRecord['id'], {'Opted In': True})
-	return redirect('/weeklyconfirmation')
+	if request.method == "GET":
+		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+		render_template(
+			"topup.html",
+			userHash=request.args['user'],
+		)
+
+	else: # POST
+		matchingRecord = airtable.match("ID", unhashID(request.args['user']))
+		if matchingRecord:
+			airtable.update(matchingRecord['id'], {'Opted In': True, "Day Preference": request.form['dayPreference']})
+		return redirect('/weeklyconfirmation')
 
 
 ############################## TOPUP CONFIRMATION ##############################
@@ -176,75 +178,75 @@ def topup_confirmation():
 ################################### FEEDBACK ###################################
 
 
-@app.route('/feedback', methods=['GET', 'POST'])
-def feedback():
-	if request.method == "GET":
-		# get user's pairs
-		# list them all with 3 buttons for each for feedback (all optional)
-		# list all people that are assigned to them with 3 butons for feedback (all optional)
-		# submit on airtable
-		if 'user' not in request.args:
-			return redirect("/")
-		userID = unhashID(request.args['user'])
-
-		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
-		airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
-
-		# get list of participants that are currently opted in
-		participants = {
-			record['fields']['ID'] : record['fields'] for record in airtableParticipants.get_all()
-		}
-
-		userPairs = airtablePairs.match("ID", str(userID))
-		profilesIDs = userPairs["fields"]["Profiles"].split(",")
-		profilesAssignedIDs = userPairs["fields"]["Profiles Assigned"].split(",")
-
-		peopleToCommentOn = 		[participants[int(id)] for id in profilesIDs]
-		peopleThatWillComment = [participants[int(id)] for id in profilesAssignedIDs]
-
-
-		return render_template(
-			"feedback.html",
-			peopleToCommentOn=peopleToCommentOn,
-			peopleThatWillComment=peopleThatWillComment,
-			userHash=request.args['user']
-		)
-	else: # POST
-		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
-
-		# get list of participants that are currently opted in
-		participants = {
-			record['fields']['ID'] : record['fields'] for record in airtableParticipants.get_all()
-		}
-
-		recordsToUpdate = {}
-		for feedback in dict(request.form).keys():
-			id = 								int(feedback.split("-")[1])
-			feedbackCategory = 	feedback.split("-")[0]
-			feedbackCount = 		participants[id][feedbackCategory] + 1
-
-			if id in recordsToUpdate:
-				recordsToUpdate[id][feedbackCategory] = feedbackCount
-			else:
-				recordsToUpdate[id] = {feedbackCategory: feedbackCount}
-
-
-
-		print(json_dumps(recordsToUpdate, indent=4))
-
-		for ID in recordsToUpdate:
-			airtableParticipants.update_by_field("ID", ID, recordsToUpdate[ID])
-			time_sleep(0.2)
-
-		return redirect("/feedback-confirmation")
-
-
-############################### FEEDBACK CONFIRMATION #############################
-
-
-@app.route('/feedback-confirmation')
-def feedback_confirmation():
-	return render_template('feedback-confirmation.html')
+# @app.route('/feedback', methods=['GET', 'POST'])
+# def feedback():
+# 	if request.method == "GET":
+# 		# get user's pairs
+# 		# list them all with 3 buttons for each for feedback (all optional)
+# 		# list all people that are assigned to them with 3 butons for feedback (all optional)
+# 		# submit on airtable
+# 		if 'user' not in request.args:
+# 			return redirect("/")
+# 		userID = unhashID(request.args['user'])
+#
+# 		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
+# 		airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
+#
+# 		# get list of participants that are currently opted in
+# 		participants = {
+# 			record['fields']['ID'] : record['fields'] for record in airtableParticipants.get_all()
+# 		}
+#
+# 		userPairs = airtablePairs.match("ID", str(userID))
+# 		profilesIDs = userPairs["fields"]["Profiles"].split(",")
+# 		profilesAssignedIDs = userPairs["fields"]["Profiles Assigned"].split(",")
+#
+# 		peopleToCommentOn = 		[participants[int(id)] for id in profilesIDs]
+# 		peopleThatWillComment = [participants[int(id)] for id in profilesAssignedIDs]
+#
+#
+# 		return render_template(
+# 			"feedback.html",
+# 			peopleToCommentOn=peopleToCommentOn,
+# 			peopleThatWillComment=peopleThatWillComment,
+# 			userHash=request.args['user']
+# 		)
+# 	else: # POST
+# 		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Participants', environ.get('AIRTABLE_KEY'))
+#
+# 		# get list of participants that are currently opted in
+# 		participants = {
+# 			record['fields']['ID'] : record['fields'] for record in airtableParticipants.get_all()
+# 		}
+#
+# 		recordsToUpdate = {}
+# 		for feedback in dict(request.form).keys():
+# 			id = 								int(feedback.split("-")[1])
+# 			feedbackCategory = 	feedback.split("-")[0]
+# 			feedbackCount = 		participants[id][feedbackCategory] + 1
+#
+# 			if id in recordsToUpdate:
+# 				recordsToUpdate[id][feedbackCategory] = feedbackCount
+# 			else:
+# 				recordsToUpdate[id] = {feedbackCategory: feedbackCount}
+#
+#
+#
+# 		print(json_dumps(recordsToUpdate, indent=4))
+#
+# 		for ID in recordsToUpdate:
+# 			airtableParticipants.update_by_field("ID", ID, recordsToUpdate[ID])
+# 			time_sleep(0.2)
+#
+# 		return redirect("/feedback-confirmation")
+#
+#
+# ############################### FEEDBACK CONFIRMATION #############################
+#
+#
+# @app.route('/feedback-confirmation')
+# def feedback_confirmation():
+# 	return render_template('feedback-confirmation.html')
 
 
 ################################# OTHER ROUTES #################################

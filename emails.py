@@ -10,6 +10,8 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, SendAt
 
 
+PEOPLE_TABLE = "Members" # "Seyhan's testing group"
+
 ################################## ID HASHING ##################################
 
 
@@ -98,25 +100,27 @@ def timestamp(day, timeDifferenceFromUTC):
 	nextWeekday = today \
 		+ timedelta(days=days.index(day)-today.weekday(), weeks=int(today.weekday() > 4))
 
-	datetimeToSendLocal = datetime.combine(nextWeekday, EMAIL_SEND_LOCALTIME)
+	datetimeToSendUTC = datetime.combine(nextWeekday, EMAIL_SEND_LOCALTIME)
 
-	return int(
-		(datetimeToSendLocal - timedelta(hours=timeDifferenceFromUTC)).timestamp()
-	)
+	datetimeToSendLocal = datetimeToSendUTC - timedelta(hours=timeDifferenceFromUTC)
+
+	return int(datetimeToSendLocal.timestamp())
+
+# 29 Dec
+def stringifyDate(timestamp):
+	return datetime.strftime(datetime.fromtimestamp(timestamp), "%-d %b")
 
 # 29 Dec - 2 Jan
-def getWeekString():
+def getNextWeekString():
 	today = date.today()
 	# if today is SAT OR SUN, it made it the previous monday when it should be the next
 	# 	add 7 days to the date
 	monday = today + timedelta(
-		days = 7 * int(today.weekday() > 4) - today.weekday()
+		days = 7 * int(today.weekday() > 4) - today.weekday() + 7
 	)
 	friday = monday + timedelta(days=4)
-
 	# Add monday's month if different to friday's
 	extraMonth = " %b" if monday.month != friday.month else ""
-
 	return datetime.strftime(monday, "%-d" + extraMonth) + " - " + datetime.strftime(friday, "%-d %b")
 
 
@@ -132,7 +136,7 @@ def Email(to, subject, html, timestamp=None):
   )
 	if timestamp:
 		print(timestamp)
-		# email.send_at = SendAt(timestamp) ##########################################################################################################
+		email.send_at = SendAt(timestamp) ##########################################################################################################
 	return email
 
 
@@ -160,13 +164,12 @@ def createParticipantEmails(day, render_template, pairs, airtableParticipants):
 	}
 
 	emails = []
-	week = getWeekString()
 	boundaryTimestamp = timestamp("Wednesday", +00)
 	# for each person to send profiles to this week
 	for pairRecord in pairs:
 		participant = participants[pairRecord["ID"]]
 
-		sendAtTimestamp = timestamp(participant["Day Preference"], participant["Time Zone"])
+		sendAtTimestamp, dateString = timestamp(participant["Day Preference"], participant["Time Zone"])
 
 		# if time to send is within 72 hours of Sunday 00:00 UTC, prepare it
 		if ( (sendAtTimestamp <  boundaryTimestamp and day == "Sunday")
@@ -174,7 +177,7 @@ def createParticipantEmails(day, render_template, pairs, airtableParticipants):
 			# render email template & add email object to list of emails to send NOW
 			email = Email(
 				to=participant["Email"],
-				subject="New LinkedIn profiles to interact with | "+week+" | LinkedIn Pod Sorter",
+				subject=date + " TODAY’s LinkedIn Squad",
 				timestamp=sendAtTimestamp,
 				html=render_template(
 					"email.html",

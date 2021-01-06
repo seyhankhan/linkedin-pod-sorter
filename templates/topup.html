@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+
+{% block body %}
+
+
+<style>
+  body {
+    background-image:
+      linear-gradient(to bottom, rgba(35, 31, 32, 0.4), rgba(35, 31, 32, 0.4)),
+      url("/static/img/mountains2.jpg");
+  }
+  h2 {
+    margin-bottom: 32px
+  }
+</style>
+
+
+<script type="text/javascript">
+  $(document).ready(() => {
+    $('.ui.checkbox').dropdown();
+  });
+
+  $('#topupForm').form({
+    fields: {
+      dayPreference: 'empty',
+    }
+  });
+</script>
+
+<div id="theContainer">
+  <div id="theTitle">
+    <img id="linkedin-logo" src="static/img/linkedin.png">
+    <h1>LinkedIn Pod Sorter</h1>
+  </div>
+
+  <div id="formContainer">
+    <h2>Confirm Your Participation Next Week</h2>
+
+    <form id="topupForm" class="ui form" method="POST" action="/topup?user={{ userHash }}">
+      <div class="field">
+        <label>Your day preference</label>
+        <select name="dayPreference" id="dayPreference" class="ui search dropdown">
+          <option value="">Select a day</option>
+          <option value="Monday">Monday</option>
+          <option value="Tuesday">Tuesday</option>
+          <option value="Wednesday">Wednesday</option>
+          <option value="Thursday">Thursday</option>
+          <option value="Friday">Friday</option>
+        </select>
+      </div>
+
+      <div id="buttonContainer">
+        <button class="ui primary button">Submit</button>
+      </div>
+
+      <div class="ui error message">
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

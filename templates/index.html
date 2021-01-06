@@ -11,7 +11,6 @@
         name: 'empty',
         email: 'email',
         linkedinProfile: 'regExp[/^(http(s)?:\/\/)?(www\.)?linkedin\.com\/(in|company)\/[A-z0-9_-]+\/?/i]',
-        dayPreference: 'empty',
         timezone: 'empty'
       }
     });
@@ -42,92 +41,49 @@
       </div>
 
       <div class="field">
-        <label>Your day preference</label>
-        <select name="dayPreference" id="dayPreference" class="ui search dropdown">
-          <option value="">Select a day</option>
-          <option value="Monday">Monday</option>
-          <option value="Tuesday">Tuesday</option>
-          <option value="Wednesday">Wednesday</option>
-          <option value="Thursday">Thursday</option>
-          <option value="Friday">Friday</option>
-        </select>
-      </div>
-
-      <div class="field">
         <label>Your local time zone</label>
         <select name="timezone" id="timezone" class="ui search dropdown">
           <option value="">Select a time zone</option>
-          <option value="-12">Dateline Standard Time (GMT-12:00) International Date Line West</option>
-          <option value="-11">Samoa Standard Time (GMT-11:00) Midway Island, Samoa</option>
-          <option value="-10">Hawaiian Standard Time (GMT-10:00) Hawaii</option>
-          <option value="-09">Alaskan Standard Time (GMT-09:00) Alaska</option>
-          <option value="-08">Pacific Standard Time (GMT-08:00) Pacific Time (US and Canada); Tijuana</option>
-          <option value="-07">Mountain Standard Time (GMT-07:00) Mountain Time (US and Canada)</option>
-          <option value="-07">Mexico Standard Time 2 (GMT-07:00) Chihuahua, La Paz, Mazatlan</option>
-          <option value="-07">U.S. Mountain Standard Time (GMT-07:00) Arizona</option>
-          <option value="-06">Central Standard Time (GMT-06:00) Central Time (US and Canada</option>
-          <option value="-06">Canada Central Standard Time (GMT-06:00) Saskatchewan</option>
-          <option value="-06">Mexico Standard Time (GMT-06:00) Guadalajara, Mexico City, Monterrey</option>
-          <option value="-06">Central America Standard Time (GMT-06:00) Central America</option>
-          <option value="-05">Eastern Standard Time (GMT-05:00) Eastern Time (US and Canada)</option>
-          <option value="-05">U.S. Eastern Standard Time (GMT-05:00) Indiana (East)</option>
-          <option value="-05">S.A. Pacific Standard Time (GMT-05:00) Bogota, Lima, Quito</option>
-          <option value="-04">Atlantic Standard Time (GMT-04:00) Atlantic Time (Canada)</option>
-          <option value="-04">S.A. Western Standard Time (GMT-04:00) Caracas, La Paz</option>
-          <option value="-04">Pacific S.A. Standard Time (GMT-04:00) Santiago</option>
-          <option value="-04">Newfoundland and Labrador Standard Time (GMT-03:30) Newfoundland and Labrador</option>
-          <option value="-03">E. South America Standard Time (GMT-03:00) Brasilia</option>
-          <option value="-03">S.A. Eastern Standard Time (GMT-03:00) Buenos Aires, Georgetown</option>
-          <option value="-03">Greenland Standard Time (GMT-03:00) Greenland</option>
-          <option value="-02">Mid-Atlantic Standard Time (GMT-02:00) Mid-Atlantic</option>
-          <option value="-01">Azores Standard Time (GMT-01:00) Azores</option>
-          <option value="-01">Cape Verde Standard Time (GMT-01:00) Cape Verde Islands</option>
-          <option value="+00">GMT Standard Time (GMT) Greenwich Mean Time: Dublin, Edinburgh, Lisbon, London</option>
-          <option value="+00">Greenwich Standard Time (GMT) Casablanca, Monrovia</option>
-          <option value="+01">Central Europe Standard Time (GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague</option>
-          <option value="+01">Central European Standard Time (GMT+01:00) Sarajevo, Skopje, Warsaw, Zagreb</option>
-          <option value="+01">Romance Standard Time (GMT+01:00) Brussels, Copenhagen, Madrid, Paris</option>
-          <option value="+01">W. Europe Standard Time (GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna</option>
-          <option value="+01">W. Central Africa Standard Time (GMT+01:00) West Central Africa</option>
-          <option value="+02">E. Europe Standard Time (GMT+02:00) Bucharest</option>
-          <option value="+02">Egypt Standard Time (GMT+02:00) Cairo</option>
-          <option value="+02">FLE Standard Time (GMT+02:00) Helsinki, Kiev, Riga, Sofia, Tallinn, Vilnius</option>
-          <option value="+02">GTB Standard Time (GMT+02:00) Athens, Istanbul, Minsk</option>
-          <option value="+02">Israel Standard Time (GMT+02:00) Jerusalem</option>
-          <option value="+02">South Africa Standard Time (GMT+02:00) Harare, Pretoria</option>
-          <option value="+03">Russian Standard Time (GMT+03:00) Moscow, St. Petersburg, Volgograd</option>
-          <option value="+03">Arab Standard Time (GMT+03:00) Kuwait, Riyadh</option>
-          <option value="+03">E. Africa Standard Time (GMT+03:00) Nairobi</option>
-          <option value="+03">Arabic Standard Time (GMT+03:00) Baghdad</option>
-          <option value="+03">Iran Standard Time (GMT+03:30) Tehran</option>
-          <option value="+04">Arabian Standard Time (GMT+04:00) Abu Dhabi, Muscat</option>
-          <option value="+04">Caucasus Standard Time (GMT+04:00) Baku, Tbilisi, Yerevan</option>
-          <option value="+05">Ekaterinburg Standard Time (GMT+05:00) Ekaterinburg</option>
-          <option value="+05">West Asia Standard Time (GMT+05:00) Islamabad, Karachi, Tashkent</option>
-          <option value="+05">India Standard Time (GMT+05:30) Chennai, Kolkata, Mumbai, New Delhi</option>
-          <option value="+06">Nepal Standard Time (GMT+05:45) Kathmandu</option>
-          <option value="+06">Central Asia Standard Time (GMT+06:00) Astana, Dhaka</option>
-          <option value="+06">Sri Lanka Standard Time (GMT+06:00) Sri Jayawardenepura</option>
-          <option value="+06">N. Central Asia Standard Time (GMT+06:00) Almaty, Novosibirsk</option>
-          <option value="+07">S.E. Asia Standard Time (GMT+07:00) Bangkok, Hanoi, Jakarta</option>
-          <option value="+07">North Asia Standard Time (GMT+07:00) Krasnoyarsk</option>
-          <option value="+08">China Standard Time (GMT+08:00) Beijing, Chongqing, Hong Kong SAR, Urumqi</option>
-          <option value="+08">Singapore Standard Time (GMT+08:00) Kuala Lumpur, Singapore</option>
-          <option value="+08">Taipei Standard Time (GMT+08:00) Taipei</option>
-          <option value="+08">Australian Western Standard Time (GMT+08:00) Perth</option>
-          <option value="+08">North Asia East Standard Time (GMT+08:00) Irkutsk, Ulaanbaatar</option>
-          <option value="+09">Korea Standard Time (GMT+09:00) Seoul</option>
-          <option value="+09">Tokyo Standard Time (GMT+09:00) Osaka, Sapporo, Tokyo</option>
-          <option value="+09">Yakutsk Standard Time (GMT+09:00) Yakutsk</option>
-          <option value="+09">Australian Central Standard Time (GMT+09:30) Darwin, Adelaide</option>
-          <option value="+10">Australian Eastern Standard Time (GMT+10:00) Melbourne, Sydney, Brisbane, Canberra</option>
-          <option value="+10">Tasmania Standard Time (GMT+10:00) Hobart</option>
-          <option value="+10">Vladivostok Standard Time (GMT+10:00) Vladivostok</option>
-          <option value="+10">West Pacific Standard Time (GMT+10:00) Guam, Port Moresby</option>
-          <option value="+11">Central Pacific Standard Time (GMT+11:00) Magadan, Solomon Islands, New Caledonia</option>
-          <option value="+12">Fiji Islands Standard Time (GMT+12:00) Fiji Islands, Kamchatka, Marshall Islands</option>
-          <option value="+12">New Zealand Standard Time (GMT+12:00) Auckland, Wellington</option>
-          <option value="+13">Tonga Standard Time (GMT+13:00) Nukualofa</option>
+          <!-- <option value="-12:00">(GMT -12:00) Eniwetok, Kwajalein</option>
+        	<option value="-11:00">(GMT -11:00) Midway Island, Samoa</option> -->
+        	<option value="-10:00">(GMT -10:00) Hawaii</option>
+        	<!-- <option value="-09:50">(GMT -9:30) Taiohae</option> -->
+        	<option value="-09:00">(GMT -9:00) Alaska</option>
+        	<option value="-08:00">(GMT -8:00) Pacific Time (US &amp; Canada)</option>
+        	<option value="-07:00">(GMT -7:00) Mountain Time (US &amp; Canada)</option>
+        	<option value="-06:00">(GMT -6:00) Central Time (US &amp; Canada), Mexico City</option>
+        	<option value="-05:00">(GMT -5:00) Eastern Time (US &amp; Canada), Bogota, Lima</option>
+        	<!-- <option value="-04:50">(GMT -4:30) Caracas</option> -->
+        	<option value="-04:00">(GMT -4:00) Atlantic Time (Canada), Caracas, La Paz</option>
+        	<!-- <option value="-03:50">(GMT -3:30) Newfoundland</option> -->
+        	<option value="-03:00">(GMT -3:00) Brazil, Buenos Aires, Georgetown</option>
+        	<option value="-02:00">(GMT -2:00) Mid-Atlantic</option>
+        	<option value="-01:00">(GMT -1:00) Azores, Cape Verde Islands</option>
+        	<option value="+00:00" selected>(GMT) Western Europe Time, London, Lisbon, Casablanca</option>
+        	<option value="+01:00">(GMT +1:00) Brussels, Copenhagen, Madrid, Paris</option>
+        	<option value="+02:00">(GMT +2:00) Kaliningrad, South Africa</option>
+        	<option value="+03:00">(GMT +3:00) Baghdad, Riyadh, Moscow, St. Petersburg</option>
+        	<!-- <option value="+03:50">(GMT +3:30) Tehran</option> -->
+        	<option value="+04:00">(GMT +4:00) Dubai, Muscat, Baku, Tbilisi</option>
+        	<!-- <option value="+04:50">(GMT +4:30) Kabul</option> -->
+        	<option value="+05:00">(GMT +5:00) Ekaterinburg, Islamabad, Karachi, Tashkent</option>
+        	<option value="+05:50">(GMT +5:30) Bombay, Calcutta, Madras, New Delhi</option>
+        	<option value="+05:75">(GMT +5:45) Kathmandu, Pokhara</option>
+        	<option value="+06:00">(GMT +6:00) Almaty, Dhaka, Colombo</option>
+        	<option value="+06:50">(GMT +6:30) Yangon, Mandalay</option>
+        	<option value="+07:00">(GMT +7:00) Bangkok, Hanoi, Jakarta</option>
+        	<option value="+08:00">(GMT +8:00) Beijing, Perth, Singapore, Hong Kong</option>
+        	<!-- <option value="+08:75">(GMT +8:45) Eucla</option> -->
+        	<option value="+09:00">(GMT +9:00) Tokyo, Seoul, Osaka, Sapporo, Yakutsk</option>
+        	<option value="+09:50">(GMT +9:30) Adelaide, Darwin</option>
+        	<option value="+10:00">(GMT +10:00) Eastern Australia, Guam, Vladivostok</option>
+        	<!-- <option value="+10:50">(GMT +10:30) Lord Howe Island</option> -->
+        	<option value="+11:00">(GMT +11:00) Magadan, Solomon Islands, New Caledonia</option>
+        	<!-- <option value="+11:50">(GMT +11:30) Norfolk Island</option> -->
+        	<option value="+12:00">(GMT +12:00) Auckland, Wellington, Fiji, Kamchatka</option>
+        	<!-- <option value="+12:75">(GMT +12:45) Chatham Islands</option> -->
+        	<!-- <option value="+13:00">(GMT +13:00) Apia, Nukualofa</option> -->
+        	<!-- <option value="+14:00">(GMT +14:00) Line Islands, Tokelau</option> -->
         </select>
       </div>
 

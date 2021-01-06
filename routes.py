@@ -227,75 +227,73 @@ def topup_confirmation():
 ################################### FEEDBACK ###################################
 
 
-# @app.route('/feedback', methods=['GET', 'POST'])
-# def feedback():
-# 	if request.method == "GET":
-# 		# get user's pairs
-# 		# list them all with 3 buttons for each for feedback (all optional)
-# 		# list all people that are assigned to them with 3 butons for feedback (all optional)
-# 		# submit on airtable
-# 		if 'user' not in request.args:
-# 			return redirect("/")
-# 		userID = unhashID(request.args['user'])
-#
-# 		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
-# 		airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
-#
-# 		# get list of participants that are currently opted in
-# 		participants = {
-# 			record['fields']['ID'] : record['fields'] for record in airtableParticipants.get_all()
-# 		}
-#
-# 		userPairs = airtablePairs.match("ID", str(userID))
-# 		profilesIDs = userPairs["fields"]["Profiles"].split(",")
-# 		profilesAssignedIDs = userPairs["fields"]["Profiles Assigned"].split(",")
-#
-# 		peopleToCommentOn = 		[participants[int(id)] for id in profilesIDs]
-# 		peopleThatWillComment = [participants[int(id)] for id in profilesAssignedIDs]
-#
-#
-# 		return render_template(
-# 			"feedback.html",
-# 			peopleToCommentOn=peopleToCommentOn,
-# 			peopleThatWillComment=peopleThatWillComment,
-# 			userHash=request.args['user']
-# 		)
-# 	else: # POST
-# 		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
-#
-# 		# get list of participants that are currently opted in
-# 		participants = {
-# 			record['fields']['ID'] : record['fields'] for record in airtableParticipants.get_all()
-# 		}
-#
-# 		recordsToUpdate = {}
-# 		for feedback in dict(request.form).keys():
-# 			id = 								int(feedback.split("-")[1])
-# 			feedbackCategory = 	feedback.split("-")[0]
-# 			feedbackCount = 		participants[id][feedbackCategory] + 1
-#
-# 			if id in recordsToUpdate:
-# 				recordsToUpdate[id][feedbackCategory] = feedbackCount
-# 			else:
-# 				recordsToUpdate[id] = {feedbackCategory: feedbackCount}
-#
-#
-#
-# 		print(json_dumps(recordsToUpdate, indent=4))
-#
-# 		for ID in recordsToUpdate:
-# 			airtableParticipants.update_by_field("ID", ID, recordsToUpdate[ID])
-# 			time_sleep(0.2)
-#
-# 		return redirect("/feedback-confirmation")
-#
-#
-# ############################### FEEDBACK CONFIRMATION #############################
-#
-#
-# @app.route('/feedback-confirmation')
-# def feedback_confirmation():
-# 	return render_template('feedback-confirmation.html')
+@app.route('/feedback', methods=['GET', 'POST'])
+def feedback():
+	if request.method == "GET":
+		# get user's pairs
+		# list them all with 3 buttons for each for feedback (all optional)
+		# list all people that are assigned to them with 3 butons for feedback (all optional)
+		# submit on airtable
+		if 'user' not in request.args:
+			return redirect("/")
+		userID = unhashID(request.args['user'])
+
+		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
+		airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
+
+		# get list of participants that are currently opted in
+		participants = {
+			record['fields']['ID'] : record['fields'] for record in airtableParticipants.get_all()
+		}
+
+		userPairs = airtablePairs.match("ID", userID)
+		profilesIDs = userPairs["fields"]["Profiles"].split(",")
+		profilesAssignedIDs = userPairs["fields"]["Profiles Assigned"].split(",")
+
+		peopleToCommentOn = 		[participants[int(id)] for id in profilesIDs]
+		peopleThatWillComment = [participants[int(id)] for id in profilesAssignedIDs]
+
+
+		return render_template(
+			"feedback.html",
+			peopleToCommentOn=peopleToCommentOn,
+			peopleThatWillComment=peopleThatWillComment,
+			userHash=request.args['user']
+		)
+	else: # POST
+		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
+
+		# get list of participants that are currently opted in
+		participants = {
+			record['fields']['ID'] : record['fields'] for record in airtableParticipants.get_all()
+		}
+
+		recordsToUpdate = {}
+		for feedback in dict(request.form).keys():
+			id = 								int(feedback.split("-")[1])
+			feedbackCategory = 	feedback.split("-")[0]
+			feedbackCount = 		participants[id][feedbackCategory] + 1
+
+			if id in recordsToUpdate:
+				recordsToUpdate[id][feedbackCategory] = feedbackCount
+			else:
+				recordsToUpdate[id] = {feedbackCategory: feedbackCount}
+
+		print(json_dumps(recordsToUpdate, indent=4))
+
+		for ID in recordsToUpdate:
+			airtableParticipants.update_by_field("ID", ID, recordsToUpdate[ID])
+			time_sleep(0.2)
+
+		return redirect("/feedback-confirmation")
+
+
+############################### FEEDBACK CONFIRMATION #############################
+
+
+@app.route('/feedback-confirmation')
+def feedback_confirmation():
+	return render_template('feedback-confirmation.html')
 
 
 ################################# OTHER ROUTES #################################

@@ -75,6 +75,62 @@ def signup_confirmation():
 	return render_template('signup-confirmation.html')
 
 
+############################ SPECIAL THURSDAY EMAIL ############################
+
+
+@app.route('/specialThursdayThing', methods=['POST'])
+def specialThursdayThing():
+	airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Members', environ.get('AIRTABLE_KEY'))
+
+	pairs = []
+	for group in ['Sandbox']:
+		pairs.extend(calculateProfilePairs(group, airtableParticipants))
+
+	addPairsToAirtable(pairs)
+
+	# get all opted in participants, but only with the necessary fields
+	participants = {
+		row['fields']['ID'] : row['fields'] for row in airtableParticipants.get_all(
+			fields=[
+				'ID','Name','Email','LinkedIn Profile','Day Preference','Opted In','Time Zone','Group'
+			]
+		)
+	}
+
+	emails = []
+	# for each person to send profiles to this week
+	for pairRecord in pairs:
+		participant = participants[pairRecord["ID"]]
+
+		# render email template & add email object to list of emails to send NOW
+		email = Email(
+			to=participant["Email"],
+			subject="7 Jan TODAY’s LinkedIn Squad",
+			html=render_template(
+				"email.html",
+				week=week,
+				name=participant["Name"],
+				userHash=hashID(pairRecord["ID"]),
+				peopleToCommentOn=pairRecord["Profiles"],
+				peopleThatWillComment=pairRecord["Profiles Assigned"],
+				participants=participants,
+				participating=True
+			)
+		)
+		emails.append(email)
+
+	# now send each email
+	# if error occurs, output & stop sending emails
+	for email in emails:
+		break
+		if sendEmail(email) == 'Error':
+			break
+
+	return redirect("/")
+
+
+
+
 ##################### EMAIL ROUTE TO BE OPENED EVERY WEEK ######################
 
 """

@@ -42,7 +42,7 @@ def calculateProfilePairs(group, airtableParticipants):
 
 	shuffle(participants)
 
-	MAX_PROFILES_PER_PERSON = 5#14
+	MAX_PROFILES_PER_PERSON = 14
 	# range of numbers from 1 to max profiles per person
   # 1,2,3,4,5,6,7,8,9,10,11,12,13,14
 	profilePairIndices = range(1, min(MAX_PROFILES_PER_PERSON, numParticipants - 1) + 1)

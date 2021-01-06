@@ -36,9 +36,9 @@ app.secret_key = "s14a"
 @app.route('/sandbox', methods=['GET', 'POST'])
 def index():
 	if request.method == 'GET':
-		return render_template('index.html')
+		return render_template('index.html',formAction=request.path)
 	else:
-		group = "Sandbox" if "sandbox" in request.path else "GTeX"
+		group = "Sandbox" if "sandbox" in request.path.lower() else "GTeX"
 
 		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
 		record = {

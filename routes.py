@@ -38,7 +38,7 @@ def index():
 	if request.method == 'GET':
 		return render_template('index.html')
 	else:
-		group = "Sandbox" if request.path and "sandbox" in request.path else "GTeX"
+		group = "Sandbox" if "sandbox" in request.path else "GTeX"
 
 		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
 		record = {

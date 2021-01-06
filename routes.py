@@ -108,7 +108,6 @@ def specialThursdayThing():
 			subject="7 Jan TODAY’s LinkedIn Squad",
 			html=render_template(
 				"email.html",
-				week=week,
 				name=participant["Name"],
 				userHash=hashID(pairRecord["ID"]),
 				peopleToCommentOn=pairRecord["Profiles"],

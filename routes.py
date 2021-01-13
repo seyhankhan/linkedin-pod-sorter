@@ -75,7 +75,7 @@ def index():
 				"emails/signup.html",
 				name=record['Name'],
 				group=group,
-				userHash=hashID(newRow['fields']['ID'])
+				userHash=hashID(newRow['fields']['ID'], record['Name'])
 			)
 		))
 		if errorOccured == "Error":
@@ -91,6 +91,19 @@ def signup_confirmation():
 	return render_template('signup-confirmation.html')
 
 
+
+#####################
+@app.route('/commit')
+def commit():
+	if not('user' in request.args and unhashID(request.args['user']) >= 0):
+		return render_template(
+			"topup.html",
+			validID=False
+		)
+	airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+	airtable.update_by_field("ID", unhashID(request.args['user']), {'Opted In': True, "Day Preference": ['Thursday']})
+	# add error page if ID not found
+	return redirect('/weeklyconfirmation')
 #################################### TOPUP #####################################
 
 

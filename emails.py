@@ -191,7 +191,7 @@ def createParticipantEmails(day, render_template, pairs, participants):
 				html=render_template(
 					"emails/weekly.html",
 					name=participant["Name"],
-					userHash=hashID(pairRecord["ID"]),
+					userHash=hashID(pairRecord["ID"], participant["Name"]),
 					nextWeekRange=nextWeekRange,
 					participating=True,
 					peopleToCommentOn=pairRecord["Profiles"],
@@ -213,8 +213,8 @@ def createSundayCommitEmails(render_template, participants):
 			subject="Are you participating next week? ("+nextWeekRange+") | LinkedIn Pod Sorter",
 			html=render_template(
 				"emails/profiles.html",
-				name=nonParticipant["Name"],
-				userHash=hashID(nonParticipant["ID"]),
+				name=participant["Name"],
+				userHash=hashID(participant["ID"], participant["Name"]),
 				nextWeekRange=nextWeekRange,
 				participating=False
 			)

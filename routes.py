@@ -101,8 +101,8 @@ def commit():
 			validID=False
 		)
 	airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
-	airtable.update_by_field("ID", unhashID(request.args['user']), {'Opted In': True, "Day Preference": ['Thursday']})
-	# add error page if ID not found
+	updatedRecord = airtable.update_by_field("ID", unhashID(request.args['user']), {'Opted In': True, "Day Preference": ['Thursday']})
+	# add error page if ID not found		
 	return redirect('/weeklyconfirmation')
 #################################### TOPUP #####################################
 

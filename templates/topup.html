@@ -17,13 +17,8 @@
 
 <script type="text/javascript">
   $(document).ready(() => {
-    $('.ui.checkbox').dropdown();
-  });
-
-  $('#topupForm').form({
-    fields: {
-      dayPreference: 'empty',
-    }
+    $('.ui.checkbox').checkbox();
+    $('#topupForm').form();
   });
 </script>
 
@@ -33,20 +28,21 @@
     <h1>LinkedIn Pod Sorter</h1>
   </div>
 
+  {% if validID %}
   <div id="formContainer">
-    <h2>Confirm Your Participation Next Week</h2>
+    <h2>Confirm Your Participation for the next available week (<u><b>{{ nextWeekRange }}</b></u>)</h2>
 
     <form id="topupForm" class="ui form" method="POST" action="/topup?user={{ userHash }}">
-      <div class="field">
-        <label>Your day preference</label>
-        <select name="dayPreference" id="dayPreference" class="ui search dropdown">
-          <option value="">Select a day</option>
-          <option value="Monday">Monday</option>
-          <option value="Tuesday">Tuesday</option>
-          <option value="Wednesday">Wednesday</option>
-          <option value="Thursday">Thursday</option>
-          <option value="Friday">Friday</option>
-        </select>
+      <label for="weekdays">Choose your days:</label>
+      <div name="weekdays" class="grouped fields">
+        {% for day in dayOptions %}
+          <div class="field">
+            <div class="ui checkbox">
+              <input type="checkbox" name="{{ day['value'] }}" tabindex="0" class="hidden">
+              <label>{{ day['date'] }}</label>
+            </div>
+          </div>
+        {% endfor %}
       </div>
 
       <div id="buttonContainer">
@@ -57,6 +53,19 @@
       </div>
     </form>
   </div>
+  {% else %}
+    <div id="textContainer">
+      <h2>Invalid URL</h2>
+      <svg id="checkmark" xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-alert" width="150" height="150" viewBox="0 0 24 24" stroke-width="0.7" stroke="#CC3F0C" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+        <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+        <line x1="12" y1="11" x2="12" y2="14" />
+      </svg>
+      <h3>Did you use the link we emailed you?</h3>
+    </div>
+  {% endif %}
 </div>
 
 {% endblock %}

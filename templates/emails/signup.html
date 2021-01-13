@@ -1,0 +1,32 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Seyhan Van Khan">
+	</head>
+	<body style="background-color:#ffffff;color:#000000;font-family:Avenir;">
+    Hey {{ name }},<br>
+		<br>
+		You are IN! 👌<br>
+		Thank you for signing up to the “{{ group }}” group.<br>
+		<br>
+
+		<div onclick="window.open('http://linkedin-pod-sorter.herokuapp.com/topup?user={{ userHash }}', '_blank')" style="padding:20px;background-color:#C5E0B3;border-radius:8px;width:fit-content;max-width:100%;cursor:pointer;justify-content:center;align-items:center;">
+			Click to confirm the days you are “Pod-ding” next week ({{ nextWeekRange }})
+		</div>
+	
+		<div id="box" style="padding:20px;background-color:#F0D060;border-radius:8px;width:fit-content;max-width:100%;justify-content:center;align-items:center;">
+			ESSENTIAL - Please save <b><a href="https://docs.google.com/document/d/1JkJmkpSqJdwur7pFF14aTcT7senipRNj3b8lIK5ns8U/edit?usp=sharing">this link for reference!</a></b><br>
+			Read the instructions very carefully so you know how to get the most out of this group.
+		</div>
+		<br>
+		<br>
+		Much Love,<br>
+		Matteo
+    <br>
+    <br>
+		<br>
+    <a style="color:grey" href="mailto:podlinkedin@gmail.com?subject=Unsubscribe {{ name }}">Unsubscribe</a>
+  </body>
+</html>

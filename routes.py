@@ -7,20 +7,27 @@
 # get requests are limited by 100? do batch instead
 # (if using sendgrid, use 'personalizations' github.com/sendgrid/sendgrid-python/issues/401)
 """
-send at certain times
-	bi-weekly wayscript runs script to schedule emails
-
+Every week, every person chooses 1 or multiple days for next weeks pod sorting.
+If they pick multiple, they are in every group & emailed the pairs for that group for every day they picked that week.
+If they dont fill in that form, they are not emailed at all
 """
+DEBUG_MODE = False
+PEOPLE_TABLE = "Seyhan's testing group" if DEBUG_MODE else 'Members'
 ################################ IMPORT MODULES ################################
 
 
+from itertools import product
 from json import dumps as json_dumps
 from os import environ
 from time import sleep as time_sleep
 
+from random import shuffle
+
 from flask import Flask, render_template, redirect, request, url_for
 
 from emails import *
+from hashing import hashID, unhashID
+
 
 ################################### INIT APP ###################################
 
@@ -36,35 +43,43 @@ app.secret_key = "s14a"
 @app.route('/sandbox', methods=['GET', 'POST'])
 def index():
 	if request.method == 'GET':
-		return render_template('index.html',formAction=request.path)
-	else:
+		return render_template(
+			'index.html',
+			formAction=request.path,
+			timezones=getAllTimezones()
+		)
+	else: # POST
 		group = "Sandbox" if "sandbox" in request.path.lower() else "GTeX"
 
-		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
+		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
 		record = {
-	    "Name": request.form["name"],
-	    "Email": request.form["email"],
-	    "LinkedIn Profile": request.form["linkedinProfile"],
+			"Name": request.form["name"],
+			"Email": request.form["email"],
+			"LinkedIn Profile": request.form["linkedinProfile"],
 			"Time Zone": request.form["timezone"],
-			"Group": group
+			"Group": [group]
 		}
 		if airtable.match('Email', request.form["email"]) or airtable.match('LinkedIn Profile', request.form["linkedinProfile"]):
-			return render_template('index.html', userAlreadySignedUp='True')
-		else:
-			newRow = airtable.insert(record)
-			errorOccured = sendEmail(Email(
-				to=record["Email"],
-				subject="POD Confirmation",
-				html=render_template(
-					"signup-email.html",
-					name=record['Name'],
-					group=record['Group'],
-					userHash=hashID(newRow['fields']['ID'])
-				)
-			))
-			if errorOccured == "Error":
-				pass
-			return redirect('/signup-confirmation')
+			return render_template(
+				'index.html',
+				formAction=request.path,
+				timezones=getAllTimezones(),
+				userAlreadySignedUp='True'
+			)
+		newRow = airtable.insert(record)
+		errorOccured = sendEmail(Email(
+			to=record["Email"],
+			subject="POD Confirmation",
+			html=render_template(
+				"signup-email.html",
+				name=record['Name'],
+				group=group,
+				userHash=hashID(newRow['fields']['ID'])
+			)
+		))
+		if errorOccured == "Error":
+			pass
+		return redirect('/signup-confirmation')
 
 
 ############################## SIGNUP CONFIRMATION #############################
@@ -75,20 +90,26 @@ def signup_confirmation():
 	return render_template('signup-confirmation.html')
 
 
-############################ SPECIAL THURSDAY EMAIL ############################
+#############################################
 
 
-@app.route('/specialThursdayThing', methods=['POST'])
-def specialThursdayThing():
-	airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Members', environ.get('AIRTABLE_KEY'))
+@app.route('/commit')
+def commit():
+	if not('user' in request.args and unhashID(request.args['user']) >= 0):
+		return render_template(
+			"topup.html",
+			validID=False
+		)
+	airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
 
-	pairs = []
-	for group in ['Sandbox']:
-		pairs.extend(calculateProfilePairs(group, airtableParticipants))
+	airtable.update_by_field("ID", unhashID(request.args['user']), {'Opted In': True, "Day Preference": ['Thursday']})
+	# add error page if ID not found
+	return redirect('/weeklyconfirmation')
 
-	addPairsToAirtable(pairs)
 
-	# get all opted in participants, but only with the necessary fields
+@app.route('/specialWednesdayBobBobBobbity')
+def specialWednesday():
+	airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
 	participants = {
 		row['fields']['ID'] : row['fields'] for row in airtableParticipants.get_all(
 			fields=[
@@ -98,122 +119,156 @@ def specialThursdayThing():
 	}
 
 	emails = []
-	# for each person to send profiles to this week
-	for pairRecord in pairs:
-		participant = participants[pairRecord["ID"]]
-
+	for participant in participants.values():
 		# render email template & add email object to list of emails to send NOW
-		email = Email(
+		emails.append(Email(
 			to=participant["Email"],
-			subject="7 Jan TODAY’s LinkedIn Squad",
+			subject="Are you participating tomorrow? (14 Jan) | LinkedIn Pod Sorter",
 			html=render_template(
-				"email.html",
+				"emails/weekly2.html",
 				name=participant["Name"],
-				userHash=hashID(pairRecord["ID"]),
-				peopleToCommentOn=pairRecord["Profiles"],
-				peopleThatWillComment=pairRecord["Profiles Assigned"],
-				participants=participants,
-				participating=True
+				userHash=hashID(participant["ID"])
 			)
-		)
-		emails.append(email)
-
+		))
 	# now send each email
 	# if error occurs, output & stop sending emails
-	for email in emails:
-		if sendEmail(email) == 'Error':
-			break
+	for email in emails[:3]:
+		print(sendEmail(email))
+
+
 
 	return redirect("/")
 
 
-
-
 ##################### EMAIL ROUTE TO BE OPENED EVERY WEEK ######################
+
 
 """
 TIMELINE:
-Sunday, 00:00 UTC
+Sunday, 19:00 UTC
 		All pairs are calculated
-		Pairs IDs saved on Airtable 'Pairs' table
-		Send all scheduled emails due up to Tuesday 23:59 UTC
+		Pairs IDs saved on Airtable 'Emails' table
+		Timestamp is saved for any emails to be sent AFTER 1900 Wednesday - THE CUTOFF
+		Send all scheduled emails due within range:
+			First email sent Sunday, 19:30 UTC (New Zealand)
+			Last email sent Wednesday, 18:59 UTC
 
-Wednesday, 00:00 UTC
-		Get remaining pairs from airtable
-		Send all remaining scheduled emails up to Friday 23:59 UTC
+Wednesday, 18:00 UTC
+		Get remaining pairs & timestamps from airtable (only get rows with timestamps)
+		Send all remaining scheduled emails up to Saturday 17:59 UTC
+		last email is sent at Friday 17:30 UTC (Hawaii)
 """
 
-# # covers Sunday 0000 UTC to Tuesday 23:59 UTC
-# # first email is sent Sunday 19:30 UTC (New Zealand)
-# @app.route('/sunday/')# + environ.get('EMAIL_CODE'), methods=['POST'])
-# def weeklyEmailCalculation_Sunday():
-# 	# get list of participants
-# 	airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Members', environ.get('AIRTABLE_KEY'))
-#
-# 	pairs = []
-# 	for group in ['Sandbox','Public']:
-# 		pairs.extend(calculateProfilePairs(group, airtableParticipants))
-#
-# 	addPairsToAirtable(pairs)
-#
-# 	emails = createParticipantEmails("Sunday", render_template, pairs, airtableParticipants)
-# 	emails.append(createNonParticipantEmails(render_template, airtableParticipants))
-#
-# 	# now send each email
-# 	# if error occurs, output & stop sending emails
-# 	for email in emails:
-# 		sendEmail(email)
-# 		break
-# 		if sendEmail(email) == 'Error':
-# 			break
-#
-# 	# make everyone now OPTED OUT
-# 	# if they want to opt back in, they will need to click link in email
-# 	optOutEveryone(airtableParticipants)
-#
-# 	return redirect("/")
-#
-#
-# ################################### WEDNESDAY ##################################
-#
-#
-# # covers Wednesday 00:00 UTC to Friday 23:59 UTC
-# # last email is sent at Friday 17:30 UTC (Hawaii)
-# @app.route('/wednesday/' + environ.get('EMAIL_CODE'), methods=['POST'])
-# def weeklyEmailCalculation_Wednesday():
-# 	# get list of participants
-# 	airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
-#
-# 	airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
-# 	pairs = [
-# 		{
-# 			'ID': 								row['fields']['ID'],
-# 			'Profiles' : 				 	[int(id) for id in row['fields']['Profiles'].split(",")],
-# 			'Profiles Assigned' : [int(id) for id in row['fields']['Profiles Assigned'].split(",")],
-# 		} for row in airtablePairs.get_all()
-# 	]
-#
-# 	emails = createParticipantEmails("Wednesday", render_template, pairs, airtableParticipants)
-# 	# now send each email
-# 	# if error occurs, output & end the function
-# 	for email in emails:
-# 		if sendEmail(email) == 'Error':
-# 			return
-#
-# 	return redirect('/')
+# runs at Sunday 19:00 UTC
+# covers Sunday 19:00 UTC to Wednesday 18:59 UTC
+# first email is sent Sunday 19:30 UTC (New Zealand)
+@app.route('/sunday/')# + environ.get('EMAIL_CODE'), methods=['POST'])
+def weeklyEmailCalculation_Sunday():
+	# get list of participants
+	airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+	participants = {
+		row['fields']['ID'] : row['fields'] for row in airtableParticipants.get_all(
+			fields=[
+				'ID','Name','Email','LinkedIn Profile','Day Preference','Opted In','Time Zone','Group'
+			]
+		)
+	}
+
+	groups = {}
+	for person in participants.values():
+		if "Opted In" not in person:
+			continue
+		for group, day in product(person['Group'], person['Day Preference']):
+			if group in groups:
+				if day in groups[group]:
+					groups[group][day].append(person)
+				else:
+					groups[group][day] = [person]
+			else:
+				groups[group] = {day: [person]}
+
+	pairs = generateAllPairsAndTimestamps(groups, participants)
+
+	addPairsToAirtable(pairs)
+
+	emails = createParticipantEmails("Sunday", render_template, pairs, participants)
+	emails.extend(createNonParticipantEmails(render_template, participants))
+
+	# now send each email
+	# if error occurs, output & stop sending emails
+	for email in emails:
+		sendEmail(email)
+		break
+		print(sendEmail(email))
+
+
+	# make everyone now OPTED OUT
+	# if they want to opt back in, they will need to click link in email
+	optOutEveryone(airtableParticipants)
+
+	return redirect("/")
+
+
+################################### WEDNESDAY ##################################
+
+
+# runs at Wednesday 18:00 UTC
+# covers Wednesday 19:00 UTC to Saturday 17:59 UTC
+# last email is sent at Friday 17:30 UTC (Hawaii)
+@app.route('/wednesday/' + environ.get('EMAIL_CODE'), methods=['POST'])
+def weeklyEmailCalculation_Wednesday():
+	# get list of participants
+	airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+	participants = {
+		row['fields']['ID'] : row['fields'] for row in airtableParticipants.get_all(
+			fields=[
+				'ID','Name','Email','LinkedIn Profile'
+			]
+		)
+	}
+	airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Emails', environ.get('AIRTABLE_KEY'))
+	pairs = [
+		{
+			'ID' : 								row['fields']['ID'],
+			'Profiles' : 				 	[int(id) for id in row['fields']['Profiles'].split(",")],
+			'Profiles Assigned' : [int(id) for id in row['fields']['Profiles Assigned'].split(",")],
+			"Timestamp" : 				row['fields']['Timestamp']
+		} for row in airtablePairs.get_all()
+	]
+
+	emails = createParticipantEmails("Wednesday", render_template, pairs, participants)
+	# now send each email
+	# if error occurs, output & end the function
+	for email in emails:
+		print(sendEmail(email))
+
+	return redirect('/')
 
 
 #################################### TOPUP #####################################
 
 
-@app.route('/topup')
+@app.route('/topup', methods=['GET','POST'])
 def topup():
-	airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
+	if not('user' in request.args and unhashID(request.args['user']) >= 0):
+		return render_template(
+			"topup.html",
+			validID=False
+		)
 
-	matchingRecord = airtable.match("ID", unhashID(request.args['user']))
-	if matchingRecord:
-		airtable.update(matchingRecord['id'], {'Opted In': True, 'Day Preference': 'Thursday'})
-	return redirect('/weeklyconfirmation')
+	if request.method == "GET":
+		return render_template(
+			"topup.html",
+			validID=True,
+			userHash=request.args['user'],
+			nextWeekRange=getNextWeekToOptInRange(),
+			dayOptions=getTopupWeekdayOptions()
+		)
+	else: # POST
+		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+		# add error page if ID not found
+		airtable.update_by_field("ID", unhashID(request.args['user']), {'Opted In': True, "Day Preference": list(dict(request.form).keys())})
+		return redirect('/weeklyconfirmation')
 
 
 ############################## TOPUP CONFIRMATION ##############################
@@ -238,8 +293,8 @@ def feedback():
 			return redirect("/")
 		userID = unhashID(request.args['user'])
 
-		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
-		airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
+		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+		airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Emails', environ.get('AIRTABLE_KEY'))
 
 		# get list of participants that are currently opted in
 		participants = {
@@ -261,7 +316,7 @@ def feedback():
 			userHash=request.args['user']
 		)
 	else: # POST
-		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), "Members", environ.get('AIRTABLE_KEY'))
+		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
 
 		# get list of participants that are currently opted in
 		participants = {
@@ -288,12 +343,65 @@ def feedback():
 		return redirect("/feedback-confirmation")
 
 
-############################### FEEDBACK CONFIRMATION #############################
+############################ FEEDBACK CONFIRMATION #############################
 
 
 @app.route('/feedback-confirmation')
 def feedback_confirmation():
 	return render_template('feedback-confirmation.html')
+
+
+################################# VIEW EMAILS ##################################
+
+
+if DEBUG_MODE:
+	@app.route('/signupemail')
+	def viewSignupEmail():
+		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+		participants = {
+			row['fields']['ID'] : row['fields'] for row in airtableParticipants.get_all(
+				fields=[
+					'ID','Name','Email','LinkedIn Profile','Day Preference','Opted In','Time Zone','Group'
+				]
+			)
+		}
+		return render_template(
+			"emails/signup.html",
+			name="Scott Spiderman",
+			group="Sandbox",
+			userHash=hashID(114)
+		)
+
+
+	@app.route('/weeklyemail')
+	def viewWeeklyEmail():
+		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+		participants = {
+			row['fields']['ID'] : row['fields'] for row in airtableParticipants.get_all(
+				fields=[
+					'ID','Name','Email','LinkedIn Profile','Day Preference','Opted In','Time Zone','Group'
+				]
+			)
+		}
+
+		return render_template(
+			"emails/weekly.html",
+			name="Scott Spiderman",
+			userHash=hashID(114),
+			peopleToCommentOn=[110,111,112],
+			peopleThatWillComment=[120,121,122],
+			participants=participants,
+			participating=True,
+			nextWeekRange="8 - 12 Jan"
+		)
+
+
+############################### GOOGLE DOCS TIPS ###############################
+
+
+@app.route('/tips')
+def linkedinPodTips():
+	return redirect("https://docs.google.com/document/d/1JkJmkpSqJdwur7pFF14aTcT7senipRNj3b8lIK5ns8U/edit?usp=sharing")
 
 
 ################################# OTHER ROUTES #################################
@@ -308,4 +416,4 @@ def feedback_confirmation():
 
 
 if __name__ == "__main__":
-	app.run(debug=True)
+	app.run(debug=DEBUG_MODE)

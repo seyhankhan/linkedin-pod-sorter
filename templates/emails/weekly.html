@@ -3,13 +3,14 @@
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	</head>
-	<body style="background-color:#ffffff;color:#000000">
+	<body style="background-color:#ffffff;color:#000000;font-family:Avenir">
     Hey {{ name }}, you Gorgeous Human Being you!
     <br>
     <br>
 		<br>
-		<a href="http://linkedin-pod-sorter.herokuapp.com/topup?user={{ userHash }}" target="_blank">
+		<div onclick="window.open('http://linkedin-pod-sorter.herokuapp.com/topup?user={{ userHash }}', '_blank')" style="padding:20px;background-color:#C5E0B3;border-radius:8px;width:fit-content;max-width:100%;cursor:pointer;justify-content:center;align-items:center;">
 			Click to confirm the days you are “Pod-ding” next week ({{ nextWeekRange }})
+		</div>
 		</a>
 		<br>
 		<br>
@@ -32,9 +33,9 @@
 			<br>
 			<br>
 			At the end of the day, make sure you<br>
-			<a target="_blank" href="http://linkedin-pod-sorter.herokuapp.com/feedback?user={{ userHash }}">
+			<div onclick="window.open('http://linkedin-pod-sorter.herokuapp.com/feedback?user={{ userHash }}', '_blank')" style="padding:20px;background-color:#F7CAAC;border-radius:8px;width:fit-content;max-width:100%;cursor:pointer;justify-content:center;align-items:center;">
 				Give Feedback on Posts & Comments
-			</a><br>
+			</div>
 			This helps us all get better, thank you!<br>
 			<br>
 			<br>
@@ -44,6 +45,7 @@
 		Matteo
     <br>
     <br>
-    <a href="mailto:podlinkedin@gmail.com?subject=Unsubscribe {{ name }}">Unsubscribe</a>
+		<br>
+    <a style="color:grey" href="mailto:podlinkedin@gmail.com?subject=Unsubscribe {{ name }}">Unsubscribe</a>
   </body>
 </html>

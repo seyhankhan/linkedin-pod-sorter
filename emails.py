@@ -1,7 +1,6 @@
-from base64 import b64decode, b64encode
 from datetime import datetime, timedelta, date, time
 from os import environ
-from pytz import UTC
+from pytz import common_timezones, timezone
 from random import shuffle
 from time import sleep as time_sleep
 
@@ -9,71 +8,56 @@ from airtable import Airtable
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, SendAt
 
-
-PEOPLE_TABLE = "Members" # "Seyhan's testing group"
-
-################################## ID HASHING ##################################
-
-
-def base64_to_utf8(letters):
-	letters += "=" * (4 - len(letters) % 4)
-	return b64decode(letters.encode()).decode()
-
-def utf8_to_base64(letters):
-	return b64encode(letters.encode("utf-8")).decode("utf-8").replace("=","")
-
-# takes integer ID, convert to string hash
-def hashID(id):
-	return utf8_to_base64(str(id) + "-podsorter")
-
-# takes string hash, convert to integer ID
-def unhashID(idHash):
-	return int(base64_to_utf8(idHash).split("-")[0])
+DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+MAX_PROFILES_PER_PERSON = 14
 
 
 ################################ CALCULATE PAIRS ###############################
 
 
-def calculateProfilePairs(group, airtableParticipants):
-	participants = airtableParticipants.get_all(
-		filterByFormula='AND({Group}="'+group+'", NOT({Opted In}=Blank()))'
-	)
-	numParticipants = len(participants)
+def generateAllPairsAndTimestamps(groups, allParticipants):
+	pairsRows = []
+	for group in groups:
+		for day in groups[group]:
+			participants = allParticipants[group][day]
+			numParticipants = len(participants)
 
-	shuffle(participants)
+			shuffle(participants)
 
-	MAX_PROFILES_PER_PERSON = 14
-	# range of numbers from 1 to max profiles per person
-  # 1,2,3,4,5,6,7,8,9,10,11,12,13,14
-	profilePairIndices = range(1, min(MAX_PROFILES_PER_PERSON, numParticipants - 1) + 1)
+			# range of numbers from 1 to max profiles per person
+		  # 1,2,3,4,5,6,7,8,9,10,11,12,13,14
+			profilePairIndices = range(1, min(MAX_PROFILES_PER_PERSON, numParticipants - 1) + 1)
 
-	pairs = []
-	# for each participant
-	for participantIndex in range(numParticipants):
-		pairs.append(
-			{
-				"ID": participants[participantIndex]['fields']["ID"],
-				"Profiles": [
-					participants[(participantIndex + i) % numParticipants]['fields']["ID"] for i in profilePairIndices
-				],
-				"Profiles Assigned": [
-					participants[(participantIndex - i) % numParticipants]['fields']["ID"] for i in profilePairIndices
-				]
-			}
-		)
-	return pairs
+			pairs = []
+			# for each participant
+			for participantIndex in range(numParticipants):
+				pairs.append(
+					{
+						"ID": participants[participantIndex]["ID"],
+						"Profiles": [
+							participants[(participantIndex + i) % numParticipants]["ID"] for i in profilePairIndices
+						],
+						"Profiles Assigned": [
+							participants[(participantIndex - i) % numParticipants]["ID"] for i in profilePairIndices
+						],
+						"Timestamp": calculateEmailTimestamp(day, participants[participantIndex]["Time Zone"])
+					}
+				)
+			pairsRows.extend(pairs)
+	return pairsRows
 
 
 def addPairsToAirtable(pairs):
-	airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Pairs', environ.get('AIRTABLE_KEY'))
-	# clear every row from 'Pairs' table
+	airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Emails', environ.get('AIRTABLE_KEY'))
+	# clear every row from 'Emails' table
 	airtablePairs.batch_delete([record['id'] for record in airtablePairs.get_all()])
 	# insert pairs (formatted into strings)
 	pairsJSON = [
 		{
 			"ID" : row["ID"],
 			"Profiles" : ','.join(str(i) for i in row["Profiles"]),
-			"Profiles Assigned" : ','.join(str(i) for i in row["Profiles Assigned"])
+			"Profiles Assigned" : ','.join(str(i) for i in row["Profiles Assigned"]),
+			"Timestamp" : row["Timestamp"]
 		} for row in pairs
 	]
 	airtablePairs.batch_insert(pairsJSON)
@@ -81,47 +65,71 @@ def addPairsToAirtable(pairs):
 
 def optOutEveryone(airtableTable):
 	for row in airtableTable.get_all(filterByFormula="NOT({Opted In}=Blank())"):
-		airtableTable.update(row['id'], {"Opted In" : False})
+		airtableTable.update(row['id'], {"Opted In" : False, "Day Preference": []})
 		time_sleep(0.2)
 
 
 ##################################### TIME #####################################
 
 
-EMAIL_SEND_LOCALTIME = time(7, 30, tzinfo=UTC)
+def getAllTimezones():
+	return common_timezones
 
-def timestamp(day, timeDifferenceFromUTC):
-	days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
-	today = date.today()
 
-	# go back to the last monday
-	# add a week if it's Sat or Sun
+def getNextDeadlineToOptIn():
+	# get the date right NOW
+	# If before Sunday, 19:00 UTC:
+	#			it's THAT sunday that is the deadline
+	# If after Sunday, 19:00 UTC:
+	#			it's not this sunday, its the NEXT sunday after this ^
+	now = datetime.now(timezone("UTC"))
+
+	# we've already passed next weeks deadline. So we need to go to NEXT weeks sunday
+	if now.weekday() == 6 and now.hour >= 19:
+		nextDeadlineSunday = now.date() + timedelta(weeks=1)
+
+	# its this weeks sunday (if today is sunday, ITS TODAY!)
+	else:
+		nextDeadlineSunday = now.date() + timedelta(days=-now.weekday() + 6)
+
+	return datetime.combine(nextDeadlineSunday, time(19, tzinfo=timezone("UTC")))
+
+
+# always calculated on a sunday, 19:00 UTC
+def calculateEmailTimestamp(userDay, userTimezone):
+	# get next deadline to sign up to the next week
+	# and minus a week to get the current ongoing one
 	# add days to make it the Day Preference
-	nextWeekday = today \
-		+ timedelta(days=days.index(day)-today.weekday(), weeks=int(today.weekday() > 4))
+	nextUserDay = getNextDeadlineToOptIn().date() \
+		+ timedelta(weeks=-1, days=DAYS.index(userDay) + 1)
 
-	datetimeToSendUTC = datetime.combine(nextWeekday, EMAIL_SEND_LOCALTIME)
+	datetimeToSend = datetime.combine(
+		nextUserDay,
+		time(7, 30, tzinfo=timezone(userTimezone))
+	)
+	return int(datetimeToSend.timestamp())
 
-	datetimeToSendLocal = datetimeToSendUTC - timedelta(hours=timeDifferenceFromUTC)
-
-	return int(datetimeToSendLocal.timestamp())
-
-# 29 Dec
-def stringifyDate(timestamp):
-	return datetime.strftime(datetime.fromtimestamp(timestamp), "%-d %b")
 
 # 29 Dec - 2 Jan
-def getNextWeekString():
-	today = date.today()
-	# if today is SAT OR SUN, it made it the previous monday when it should be the next
-	# 	add 7 days to the date
-	monday = today + timedelta(
-		days = 7 * int(today.weekday() > 4) - today.weekday() + 7
-	)
-	friday = monday + timedelta(days=4)
+def getNextWeekToOptInRange():
+	nextDeadline = getNextDeadlineToOptIn().date()
+	monday = nextDeadline + timedelta(days=1)
+	friday = nextDeadline + timedelta(days=5)
 	# Add monday's month if different to friday's
 	extraMonth = " %b" if monday.month != friday.month else ""
-	return datetime.strftime(monday, "%-d" + extraMonth) + " - " + datetime.strftime(friday, "%-d %b")
+	return monday.strftime("%-d" + extraMonth) + " - " + friday.strftime("%-d %b")
+
+# list of every weekday & its full date
+def getTopupWeekdayOptions():
+	nextDeadline = getNextDeadlineToOptIn().date()
+	options = []
+	for i in range(1, 5 + 1):
+		weekday = nextDeadline + timedelta(days=i)
+		options.append({
+			'date'	:	weekday.strftime("%A, %-d %b"),
+			'value'	:	weekday.strftime("%A")
+		})
+	return options
 
 
 ##################################### EMAIL ####################################
@@ -147,72 +155,70 @@ def sendEmail(email):
 		print('Status Code:', response.status_code)
 		print('Body:', response.body)
 		print('Headers:\n', response.headers)
-		return ''
+		return 'SENT'
 	except Exception as e:
 		print(e)
-		return 'Error'
+		return 'ERROR'
 
 
-def createParticipantEmails(day, render_template, pairs, airtableParticipants):
-	# get all opted in participants, but only with the necessary fields
-	participants = {
-		row['fields']['ID'] : row['fields'] for row in airtableParticipants.get_all(
-			fields=[
-				'ID','Name','Email','LinkedIn Profile','Day Preference','Opted In','Time Zone','Group'
-			]
-		)
-	}
-
+# runs on Sunday 19:00 UTC and Wednesday 18:00 UTC
+def createParticipantEmails(day, render_template, pairs, participants):
 	emails = []
-	boundaryTimestamp = timestamp("Wednesday", +00)
-	# for each person to send profiles to this week
+
+	# get the next sunday deadline possible
+	# go back to the last wednesday before that Sunday
+	boundaryTimestamp = int(datetime.combine(
+		getNextDeadlineToOptIn().date() - timedelta(days=4),
+		time(19, tzinfo=timezone("UTC"))
+	).timestamp())
+
+	# for each email to send profiles to this week
 	for pairRecord in pairs:
 		participant = participants[pairRecord["ID"]]
 
-		sendAtTimestamp, dateString = timestamp(participant["Day Preference"], participant["Time Zone"])
+		sendAtTimestamp = pairRecord["Timestamp"]
+		emailDate = datetime.fromtimestamp(sendAtTimestamp).strftime("%-d %b")
+		nextWeekRange = getNextWeekToOptInRange()
 
-		# if time to send is within 72 hours of Sunday 00:00 UTC, prepare it
+		# if time to send is within 72 hours of Sunday 19:00 UTC, prepare it
 		if ( (sendAtTimestamp <  boundaryTimestamp and day == "Sunday")
 			or (sendAtTimestamp >= boundaryTimestamp and day == "Wednesday")):
 			# render email template & add email object to list of emails to send NOW
-			email = Email(
+			emails.append(Email(
 				to=participant["Email"],
-				subject=date + " TODAY’s LinkedIn Squad",
+				subject=emailDate + " TODAY’s LinkedIn Squad",
 				timestamp=sendAtTimestamp,
 				html=render_template(
-					"email.html",
-					week=week,
+					"emails/weekly.html",
 					name=participant["Name"],
 					userHash=hashID(pairRecord["ID"]),
+					nextWeekRange=nextWeekRange,
+					participating=True,
 					peopleToCommentOn=pairRecord["Profiles"],
 					peopleThatWillComment=pairRecord["Profiles Assigned"],
-					participants=participants,
-					participating=True
+					participants=participants
 				)
-			)
-			emails.append(email)
+			))
 	return emails
 
-
-def createNonParticipantEmails(render_template, airtableParticipants):
+# runs on Sunday 19:00 UTC
+def createNonParticipantEmails(render_template, participants):
 	emails = []
-	nonparticipants = airtableParticipants.get_all(
-		filterByFormula="{Opted In}=Blank()",
-		fields=[
-			'ID','Name','Email'
-		]
-	)
 	# for each non participant this week (just before we make everyone opted out)
-	for nonParticipant in nonparticipants:
+	for nonParticipant in participants.values():
+		if "Opted In" in nonParticipant:
+			continue
+		nextWeekRange = getNextWeekToOptInRange()
 		# render email template & add email object to list of emails to send NOW
 		emails.append(Email(
-			to=nonParticipant['fields']["Email"],
-			subject="Are you participating next week? | LinkedIn Pod Sorter",
+			to=nonParticipant["Email"],
+			subject="Are you participating next week? ("+nextWeekRange+") | LinkedIn Pod Sorter",
 			html=render_template(
-				"email.html",
-				name=nonParticipant['fields']["Name"],
-				userHash=hashID(nonParticipant['fields']["ID"]),
+				"emails/weekly.html",
+				name=nonParticipant["Name"],
+				userHash=hashID(nonParticipant["ID"]),
+				nextWeekRange=nextWeekRange,
 				participating=False
-			),
+			)
 		))
 	return emails

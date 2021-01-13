@@ -132,7 +132,7 @@ def specialWednesday():
 		))
 	# now send each email
 	# if error occurs, output & stop sending emails
-	for email in emails[:3]:
+	for email in emails:
 		print(sendEmail(email))
 
 

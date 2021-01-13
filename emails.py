@@ -201,20 +201,18 @@ def createParticipantEmails(day, render_template, pairs, participants):
 			))
 	return emails
 
-# runs on Sunday 19:00 UTC
-def createNonParticipantEmails(render_template, participants):
+# runs on Sunday 07:30 UTC
+def createSundayCommitEmails(render_template, participants):
 	emails = []
 	# for each non participant this week (just before we make everyone opted out)
-	for nonParticipant in participants.values():
-		if "Opted In" in nonParticipant:
-			continue
+	for participant in participants.values():
 		nextWeekRange = getNextWeekToOptInRange()
 		# render email template & add email object to list of emails to send NOW
 		emails.append(Email(
 			to=nonParticipant["Email"],
 			subject="Are you participating next week? ("+nextWeekRange+") | LinkedIn Pod Sorter",
 			html=render_template(
-				"emails/weekly.html",
+				"emails/profiles.html",
 				name=nonParticipant["Name"],
 				userHash=hashID(nonParticipant["ID"]),
 				nextWeekRange=nextWeekRange,

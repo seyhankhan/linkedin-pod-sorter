@@ -2,14 +2,14 @@ from os import environ
 
 from airtable import Airtable
 
-from emails import DAYS, clearAllDayPreferences, getTodaysDate, createCommitEmails, createProfilesEmail, sendEmail, generateAllPairsAndTimestamps, addPairsToAirtable
+from emails import *
 
 """
 make these run 19:30, the night before!!
 make sunday emails send at local time zone
 """
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 PEOPLE_TABLE = "Seyhan's testing group" if DEBUG_MODE else 'Members'
 
 currentDate = getCurrentDatetime()

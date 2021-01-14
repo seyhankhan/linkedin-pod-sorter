@@ -76,7 +76,7 @@ def getAllTimezones():
 	return common_timezones
 
 def getCurrentDatetime():
-	return timezone("UTC").localize(datetime.now()).date()
+	return timezone("UTC").localize(datetime.now())
 
 
 def getLastCommitEmailDate():

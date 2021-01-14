@@ -121,7 +121,7 @@ def topup():
 			"topup.html",
 			validID=True,
 			userHash=request.args['user'],
-			nextWeekRange=getNextWeekToOptInRange(),
+			nextWeekRange=getWeekToCommitToRange(),
 			dayOptions=getTopupWeekdayOptions()
 		)
 	else: # POST

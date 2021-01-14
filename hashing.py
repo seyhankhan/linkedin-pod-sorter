@@ -8,6 +8,7 @@ def base64_to_utf8(letters):
 		print(e)
 		return ""
 
+
 def utf8_to_base64(letters):
 	return b64encode(letters.encode("utf-8"), altchars=b'-_').decode("utf-8").replace("=","")
 
@@ -17,7 +18,8 @@ def hashID(id, name=""):
 	# if id not integer
 	if type(id) != type(1):
 		return ""
-	return name.ljust(6, "_") + utf8_to_base64(str(id * 379499079)[::-1])
+	return name.replace(" ","").ljust(6, "_")[:6] + utf8_to_base64(str(id * 379499079)[::-1])
+
 
 # takes string hash, convert to integer ID
 def unhashID(idHash):

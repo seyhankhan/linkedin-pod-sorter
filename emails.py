@@ -5,45 +5,45 @@ from random import shuffle
 from time import sleep as time_sleep
 
 from airtable import Airtable
+from jinja2 import Environment, FileSystemLoader
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, SendAt
 
+from hashing import hashID
+
 DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
-MAX_PROFILES_PER_PERSON = 14
+MAX_PROFILES_PER_PERSON = 15
 
 
 ################################ CALCULATE PAIRS ###############################
 
 
-def generateAllPairsAndTimestamps(groups, allParticipants):
+def generateAllPairsAndTimestamps(groups, day):
 	pairsRows = []
 	for group in groups:
-		for day in groups[group]:
-			participants = allParticipants[group][day]
-			numParticipants = len(participants)
+		numParticipants = len(groups[group])
+		shuffle(groups[group])
 
-			shuffle(participants)
+		# range of numbers from 1 to max profiles per person
+		# 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+		profilePairIndices = range(1, min(MAX_PROFILES_PER_PERSON, numParticipants - 1) + 1)
 
-			# range of numbers from 1 to max profiles per person
-		  # 1,2,3,4,5,6,7,8,9,10,11,12,13,14
-			profilePairIndices = range(1, min(MAX_PROFILES_PER_PERSON, numParticipants - 1) + 1)
-
-			pairs = []
-			# for each participant
-			for participantIndex in range(numParticipants):
-				pairs.append(
-					{
-						"ID": participants[participantIndex]["ID"],
-						"Profiles": [
-							participants[(participantIndex + i) % numParticipants]["ID"] for i in profilePairIndices
-						],
-						"Profiles Assigned": [
-							participants[(participantIndex - i) % numParticipants]["ID"] for i in profilePairIndices
-						],
-						"Timestamp": calculateEmailTimestamp(day, participants[participantIndex]["Time Zone"])
-					}
-				)
-			pairsRows.extend(pairs)
+		pairs = []
+		# for each participant
+		for participantIndex in range(numParticipants):
+			pairs.append(
+				{
+					"ID": groups[group][participantIndex]["ID"],
+					"Profiles": [
+						groups[group][(participantIndex + i) % numParticipants]["ID"] for i in profilePairIndices
+					],
+					"Profiles Assigned": [
+						groups[group][(participantIndex - i) % numParticipants]["ID"] for i in profilePairIndices
+					],
+					"Timestamp": calculateEmailTimestamp(day, groups[group][participantIndex]["Time Zone"])
+				}
+			)
+		pairsRows.extend(pairs)
 	return pairsRows
 
 
@@ -63,9 +63,9 @@ def addPairsToAirtable(pairs):
 	airtablePairs.batch_insert(pairsJSON)
 
 
-def optOutEveryone(airtableTable):
-	for row in airtableTable.get_all(filterByFormula="NOT({Opted In}=Blank())"):
-		airtableTable.update(row['id'], {"Opted In" : False, "Day Preference": []})
+def clearAllDayPreferences(airtableTable):
+	for row in airtableTable.get_all(filterByFormula="NOT({Day Preference}=Blank())"):
+		airtableTable.update(row['id'], {"Day Preference": []})
 		time_sleep(0.2)
 
 
@@ -75,56 +75,54 @@ def optOutEveryone(airtableTable):
 def getAllTimezones():
 	return common_timezones
 
+def getCurrentDatetime():
+	return timezone("UTC").localize(datetime.now()).date()
 
-def getNextDeadlineToOptIn():
+
+def getLastCommitEmailDate():
 	# get the date right NOW
-	# If before Sunday, 19:00 UTC:
-	#			it's THAT sunday that is the deadline
-	# If after Sunday, 19:00 UTC:
-	#			it's not this sunday, its the NEXT sunday after this ^
-	now = datetime.now(timezone("UTC"))
+	# If before Sunday, 07:30 UTC:
+	#			it was sent on the sunday the PREVIOUS week
+	# If after Sunday, 07:30 UTC:
+	#			it was today
+	now = getCurrentDatetime()
 
-	# we've already passed next weeks deadline. So we need to go to NEXT weeks sunday
-	if now.weekday() == 6 and now.hour >= 19:
-		nextDeadlineSunday = now.date() + timedelta(weeks=1)
-
-	# its this weeks sunday (if today is sunday, ITS TODAY!)
+	# email was just sent today, so it's today
+	if now.weekday() == 6 and now.hour >= 7 and now.minute >= 30:
+		return now.date()
+	# if before Sunday, 07:30 UTC, it was last week's sunday
 	else:
-		nextDeadlineSunday = now.date() + timedelta(days=-now.weekday() + 6)
-
-	return datetime.combine(nextDeadlineSunday, time(19, tzinfo=timezone("UTC")))
+		return now.date() + timedelta(days=-now.weekday() - 1)
 
 
-# always calculated on a sunday, 19:00 UTC
 def calculateEmailTimestamp(userDay, userTimezone):
-	# get next deadline to sign up to the next week
-	# and minus a week to get the current ongoing one
+	# get date of when LAST commit email was sent
 	# add days to make it the Day Preference
-	nextUserDay = getNextDeadlineToOptIn().date() \
-		+ timedelta(weeks=-1, days=DAYS.index(userDay) + 1)
+	nextUserDay = getLastCommitEmailDate() \
+		+ timedelta(days=1 + DAYS.index(userDay))
 
-	datetimeToSend = datetime.combine(
-		nextUserDay,
-		time(7, 30, tzinfo=timezone(userTimezone))
+	datetimeToSend = timezone(userTimezone).localize(
+		datetime.combine(nextUserDay, time(7, 30))
 	)
 	return int(datetimeToSend.timestamp())
 
 
 # 29 Dec - 2 Jan
-def getNextWeekToOptInRange():
-	nextDeadline = getNextDeadlineToOptIn().date()
+def getWeekToCommitToRange():
+	nextDeadline = getLastCommitEmailDate()
 	monday = nextDeadline + timedelta(days=1)
 	friday = nextDeadline + timedelta(days=5)
 	# Add monday's month if different to friday's
 	extraMonth = " %b" if monday.month != friday.month else ""
 	return monday.strftime("%-d" + extraMonth) + " - " + friday.strftime("%-d %b")
 
+
 # list of every weekday & its full date
 def getTopupWeekdayOptions():
-	nextDeadline = getNextDeadlineToOptIn().date()
+	lastSunday = getLastCommitEmailDate()
 	options = []
-	for i in range(1, 5 + 1):
-		weekday = nextDeadline + timedelta(days=i)
+	for i in range(0 + 1, 5 + 1):
+		weekday = lastSunday + timedelta(days=i)
 		options.append({
 			'date'	:	weekday.strftime("%A, %-d %b"),
 			'value'	:	weekday.strftime("%A")
@@ -137,14 +135,14 @@ def getTopupWeekdayOptions():
 
 def Email(to, subject, html, timestamp=None):
 	email = Mail(
-    from_email=environ.get('FROM_EMAIL'),
-    to_emails=to,
-    subject=subject,
-    html_content=html
-  )
+		from_email=environ.get('FROM_EMAIL'),
+		to_emails=to,
+		subject=subject,
+		html_content=html
+	)
 	if timestamp:
-		print(timestamp)
-		email.send_at = SendAt(timestamp) ##########################################################################################################
+		print(to, timestamp)
+		email.send_at = SendAt(timestamp)
 	return email
 
 
@@ -161,16 +159,16 @@ def sendEmail(email):
 		return 'ERROR'
 
 
-# runs on Sunday 19:00 UTC and Wednesday 18:00 UTC
-def createParticipantEmails(day, render_template, pairs, participants):
-	emails = []
+def renderHTML(file_name, **context):
+	return Environment(
+		loader=FileSystemLoader('templates/')
+	).get_template(file_name).render(context)
 
-	# get the next sunday deadline possible
-	# go back to the last wednesday before that Sunday
-	boundaryTimestamp = int(datetime.combine(
-		getNextDeadlineToOptIn().date() - timedelta(days=4),
-		time(19, tzinfo=timezone("UTC"))
-	).timestamp())
+
+# Runs Mon-Fri, at 07:30 UTC
+# (should be running 1930 day before)
+def createProfilesEmail(participants, pairs):
+	emails = []
 
 	# for each email to send profiles to this week
 	for pairRecord in pairs:
@@ -178,45 +176,38 @@ def createParticipantEmails(day, render_template, pairs, participants):
 
 		sendAtTimestamp = pairRecord["Timestamp"]
 		emailDate = datetime.fromtimestamp(sendAtTimestamp).strftime("%-d %b")
-		nextWeekRange = getNextWeekToOptInRange()
 
-		# if time to send is within 72 hours of Sunday 19:00 UTC, prepare it
-		if ( (sendAtTimestamp <  boundaryTimestamp and day == "Sunday")
-			or (sendAtTimestamp >= boundaryTimestamp and day == "Wednesday")):
-			# render email template & add email object to list of emails to send NOW
-			emails.append(Email(
-				to=participant["Email"],
-				subject=emailDate + " TODAY’s LinkedIn Squad",
-				timestamp=sendAtTimestamp,
-				html=render_template(
-					"emails/weekly.html",
-					name=participant["Name"],
-					userHash=hashID(pairRecord["ID"], participant["Name"]),
-					nextWeekRange=nextWeekRange,
-					participating=True,
-					peopleToCommentOn=pairRecord["Profiles"],
-					peopleThatWillComment=pairRecord["Profiles Assigned"],
-					participants=participants
-				)
-			))
-	return emails
-
-# runs on Sunday 07:30 UTC
-def createSundayCommitEmails(render_template, participants):
-	emails = []
-	# for each non participant this week (just before we make everyone opted out)
-	for participant in participants.values():
-		nextWeekRange = getNextWeekToOptInRange()
 		# render email template & add email object to list of emails to send NOW
 		emails.append(Email(
-			to=nonParticipant["Email"],
-			subject="Are you participating next week? ("+nextWeekRange+") | LinkedIn Pod Sorter",
-			html=render_template(
+			to=participant["Email"],
+			subject=emailDate + " TODAY’s LinkedIn Squad",
+			timestamp=sendAtTimestamp,
+			html=renderHTML(
 				"emails/profiles.html",
 				name=participant["Name"],
-				userHash=hashID(participant["ID"], participant["Name"]),
+				userHash=hashID(pairRecord["ID"]),
+				peopleToCommentOn=pairRecord["Profiles"],
+				peopleThatWillComment=pairRecord["Profiles Assigned"],
+				participants=participants
+			)
+		))
+	return emails
+
+
+# runs on Sunday 07:30 UTC
+def createCommitEmails(participants):
+	nextWeekRange = getWeekToCommitToRange()
+
+	emails = []
+	for participant in participants.values():
+		emails.append(Email(
+			to=participant["Email"],
+			subject="Are you participating next week? ("+nextWeekRange+") | LinkedIn Pod Sorter",
+			html=renderHTML(
+				"emails/commit.html",
+				name=participant["Name"],
+				userHash=hashID(participant["ID"]),
 				nextWeekRange=nextWeekRange,
-				participating=False
 			)
 		))
 	return emails

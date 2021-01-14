@@ -115,7 +115,7 @@ if currentDatetime.weekday() < 5:
 # 	participants = {
 # 		row['fields']['ID'] : row['fields'] for row in airtableParticipants.get_all(
 # 			fields=[
-# 				'ID','Name','Email','LinkedIn Profile','Day Preference','Opted In','Time Zone','Group'
+# 				'ID','Name','Email','LinkedIn Profile','Day Preference','Time Zone','Group'
 # 			]
 # 		)
 # 	}

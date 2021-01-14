@@ -1,9 +1,88 @@
 from datetime import datetime
 from pytz import timezone
 
-print("\n\n")
-print(datetime.now(timezone("UTC")))
-print(datetime.now())
+from airtable import Airtable
+
+PEOPLE_TABLE = "Members"
+DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+
+
+currentDate = datetime.now(timezone("UTC")).date()
+
+
+airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+participants = {
+	row['fields']['ID'] : row['fields'] for row in airtableParticipants.get_all(
+		fields=[
+			 'ID','Name','Email','LinkedIn Profile','Day Preference','Time Zone','Group'
+		]
+	)
+}
+
+
+#################################### SUNDAY ####################################
+
+# Runs every Sunday, 07:30 UTC
+if currentDate.weekday() == DAYS.index('Sunday'):
+	monday = currentDate + timedelta(days=1)
+	friday = currentDate + timedelta(days=5)
+	# Add monday's month if different to friday's
+	extraMonth = " %b" if monday.month != friday.month else ""
+	nextWeekRange = monday.strftime("%-d" + extraMonth) + " - " + friday.strftime("%-d %b")
+
+	emails = []
+	for participant in participants.values():
+    emails.append(Email(
+      to=participant["Email"],
+			subject="Are you participating next week? ("+nextWeekRange+") | LinkedIn Pod Sorter",
+			html=render_template(
+				"emails/commit.html",
+				name=participant["Name"],
+				userHash=hashID(participant["ID"], participant["Name"]),
+				nextWeekRange=nextWeekRange,
+			)
+		))
+
+
+############################### MONDAY to FRIDAY ###############################
+
+# Runs Mon-Fri, at 07:30 UTC
+if currentDatetime.weekday() < 5:
+	groups = {}
+	for participant in participants.values():
+		if "Day Preference" not in person:
+			continue
+
+		for group in participant['Group']:
+			if currentDatetime.strftime("%A") in participant['Day Preference']
+			if group in groups:
+				if day in groups[group]:
+					groups[group][day].append(person)
+				else:
+					groups[group][day] = [person]
+			else:
+				groups[group] = {day: [person]}
+
+	pairs = generateAllPairsAndTimestamps(groups, participants)
+
+	addPairsToAirtable(pairs)
+
+	emails = createParticipantEmails("Sunday", render_template, pairs, participants)
+	emails.extend(createNonParticipantEmails(render_template, participants))
+
+	# now send each email
+	# if error occurs, output & stop sending emails
+	for email in emails:
+		sendEmail(email)
+		break
+		print(sendEmail(email))
+
+
+	# make everyone now OPTED OUT
+	# if they want to opt back in, they will need to click link in email
+	optOutEveryone(airtableParticipants)
+
+
 
 
 

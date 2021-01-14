@@ -58,7 +58,7 @@ def index():
 			"Email": request.form["email"],
 			"LinkedIn Profile": request.form["linkedinProfile"],
 			"Time Zone": request.form["timezone"],
-			"Group": [group]
+			"Group": group
 		}
 		if airtable.match('Email', request.form["email"]) or airtable.match('LinkedIn Profile', request.form["linkedinProfile"]):
 			return render_template(
@@ -92,6 +92,7 @@ def signup_confirmation():
 
 
 
+#################################### TOPUP #####################################
 #####################
 @app.route('/commit')
 def commit():
@@ -101,10 +102,10 @@ def commit():
 			validID=False
 		)
 	airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
-	updatedRecord = airtable.update_by_field("ID", unhashID(request.args['user']), {'Opted In': True, "Day Preference": ['Thursday']})
-	# add error page if ID not found		
+	updatedRecord = airtable.update_by_field("ID", unhashID(request.args['user']), {"Day Preference": ['Thursday']})
+	# add error page if ID not found
 	return redirect('/weeklyconfirmation')
-#################################### TOPUP #####################################
+####################
 
 
 @app.route('/topup', methods=['GET','POST'])

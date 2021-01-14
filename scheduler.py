@@ -1,4 +1,5 @@
 from os import environ
+from time import sleep as time_sleep
 
 from airtable import Airtable
 
@@ -30,7 +31,9 @@ participants = {
 # Runs every Sunday, 07:30 UTC
 if currentDate.weekday() == DAYS.index('Sunday'):
 	# clear everyone's day choice from last Mon-Fri
-	clearAllDayPreferences(airtableParticipants)
+	for row in airtableParticipants.get_all(filterByFormula="NOT({Day Preference}=Blank())"):
+		airtableParticipants.update(row['id'], {"Day Preference": []})
+		time_sleep(0.2)
 
 	emails = createCommitEmails(participants)
 	for email in emails:

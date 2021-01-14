@@ -2,7 +2,6 @@ from datetime import datetime, timedelta, date, time
 from os import environ
 from pytz import common_timezones, timezone
 from random import shuffle
-from time import sleep as time_sleep
 
 from airtable import Airtable
 from jinja2 import Environment, FileSystemLoader
@@ -61,12 +60,6 @@ def addPairsToAirtable(pairs):
 		} for row in pairs
 	]
 	airtablePairs.batch_insert(pairsJSON)
-
-
-def clearAllDayPreferences(airtableTable):
-	for row in airtableTable.get_all(filterByFormula="NOT({Day Preference}=Blank())"):
-		airtableTable.update(row['id'], {"Day Preference": []})
-		time_sleep(0.2)
 
 
 ##################################### TIME #####################################

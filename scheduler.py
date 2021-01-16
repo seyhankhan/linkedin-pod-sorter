@@ -3,6 +3,7 @@ from time import sleep as time_sleep
 
 from airtable import Airtable
 
+from constants import *
 from emails import *
 
 """
@@ -10,12 +11,9 @@ make these run 19:30, the night before!!
 make sunday emails send at local time zone
 """
 
-DEBUG_MODE = False
-PEOPLE_TABLE = "Seyhan's testing group" if DEBUG_MODE else 'Members'
-
 currentDate = getCurrentDatetime()
 
-airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+airtableParticipants = Airtable("Participants")
 participants = {
 	row['fields']['ID'] : row['fields'] for row in airtableParticipants.get_all(
 		fields=[
@@ -23,19 +21,22 @@ participants = {
 		]
 	)
 }
+airtablePairs = Airtable('Emails')
 
 
 #################################### SUNDAY ####################################
 
 
-# Runs every Sunday, 07:30 UTC
-if currentDate.weekday() == DAYS.index('Sunday'):
+# Runs Sat, at 1830
+if currentDate.weekday() == 5:
 	# clear everyone's day choice from last Mon-Fri
-	for row in airtableParticipants.get_all(filterByFormula="NOT({Day Preference}=Blank())"):
-		airtableParticipants.update(row['id'], {"Day Preference": []})
-		time_sleep(0.2)
+	airtableParticipants.update_all({"Day Preference": []})
 
-	emails = createCommitEmails(participants)
+	# clear every row from 'Emails' table
+	airtablePairs.delete_all()
+
+	sendTimestamp = calculateEmailTimestamp('Sunday', 'UTC')
+	emails = createCommitEmails(participants, sendTimestamp)
 	for email in emails:
 		print(sendEmail(email))
 
@@ -43,8 +44,8 @@ if currentDate.weekday() == DAYS.index('Sunday'):
 ############################### MONDAY to FRIDAY ###############################
 
 
-# Runs Mon-Fri, at 07:30 UTC			(should be running 1930 day before)
-if currentDate.weekday() < 5:
+# Runs Sun-Thu, at 1830
+if (currentDate.weekday() + 1) % 7 < 5:
 	groups = {}
 	for participant in participants.values():
 		# if participant picked no days, skip em
@@ -71,5 +72,5 @@ if currentDate.weekday() < 5:
 		print(sendEmail(email))
 
 
-# First email is sent Sunday, 19:30 UTC (New Zealand)
+# First email is sent Sunday, 18:30 UTC (New Zealand)
 # Last email is sent Friday, 17:30 UTC (Hawaii)

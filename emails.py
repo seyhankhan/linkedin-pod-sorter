@@ -1,17 +1,13 @@
-from datetime import datetime, timedelta, date, time
 from os import environ
-from pytz import common_timezones, timezone
 from random import shuffle
 
-from airtable import Airtable
+from airtables import Airtable
 from jinja2 import Environment, FileSystemLoader
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, SendAt
 
 from hashing import hashID
-
-DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
-MAX_PROFILES_PER_PERSON = 15
+from constants import *
 
 
 ################################ CALCULATE PAIRS ###############################
@@ -44,83 +40,6 @@ def generateAllPairsAndTimestamps(groups, day):
 			)
 		pairsRows.extend(pairs)
 	return pairsRows
-
-
-def addPairsToAirtable(pairs):
-	airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Emails', environ.get('AIRTABLE_KEY'))
-	# clear every row from 'Emails' table
-	airtablePairs.batch_delete([record['id'] for record in airtablePairs.get_all()])
-	# insert pairs (formatted into strings)
-	pairsJSON = [
-		{
-			"ID" : row["ID"],
-			"Profiles" : ','.join(str(i) for i in row["Profiles"]),
-			"Profiles Assigned" : ','.join(str(i) for i in row["Profiles Assigned"]),
-			"Timestamp" : row["Timestamp"]
-		} for row in pairs
-	]
-	airtablePairs.batch_insert(pairsJSON)
-
-
-##################################### TIME #####################################
-
-
-def getAllTimezones():
-	return common_timezones
-
-def getCurrentDatetime():
-	return timezone("UTC").localize(datetime.now())
-
-
-def getLastCommitEmailDate():
-	# get the date right NOW
-	# If before Sunday, 07:30 UTC:
-	#			it was sent on the sunday the PREVIOUS week
-	# If after Sunday, 07:30 UTC:
-	#			it was today
-	now = getCurrentDatetime()
-
-	# email was just sent today, so it's today
-	if now.weekday() == 6 and now.hour >= 7 and now.minute >= 30:
-		return now.date()
-	# if before Sunday, 07:30 UTC, it was last week's sunday
-	else:
-		return now.date() + timedelta(days=-now.weekday() - 1)
-
-
-def calculateEmailTimestamp(userDay, userTimezone):
-	# get date of when LAST commit email was sent
-	# add days to make it the Day Preference
-	nextUserDay = getLastCommitEmailDate() \
-		+ timedelta(days=1 + DAYS.index(userDay))
-
-	datetimeToSend = timezone(userTimezone).localize(
-		datetime.combine(nextUserDay, time(7, 30))
-	)
-	return int(datetimeToSend.timestamp())
-
-
-# 29 Dec - 2 Jan
-def getWeekToCommitToRange():
-	nextDeadline = getLastCommitEmailDate()
-	monday = nextDeadline + timedelta(days=1)
-	friday = nextDeadline + timedelta(days=5)
-	# Add monday's month if different to friday's
-	extraMonth = " %b" if monday.month != friday.month else ""
-	return monday.strftime("%-d" + extraMonth) + " - " + friday.strftime("%-d %b")
-
-
-# list of every weekday & its full date
-def getTopupWeekdayOptions():
-	lastSunday = getLastCommitEmailDate()
-	options = []
-	for i in range(0 + 1, 5 + 1):
-		weekday = lastSunday + timedelta(days=i)
-		options.append({
-			'date'	:	weekday.strftime("%A, %-d %b"),
-			'value'	:	weekday.strftime("%A")
-		})
-	return options
 
 
 ##################################### EMAIL ####################################
@@ -188,7 +107,7 @@ def createProfilesEmail(participants, pairs):
 
 
 # runs on Sunday 07:30 UTC
-def createCommitEmails(participants):
+def createCommitEmails(participants, timestamp):
 	nextWeekRange = getWeekToCommitToRange()
 
 	emails = []
@@ -196,6 +115,7 @@ def createCommitEmails(participants):
 		emails.append(Email(
 			to=participant["Email"],
 			subject="Are you participating next week? ("+nextWeekRange+") | LinkedIn Pod Sorter",
+			timestamp=timestamp
 			html=renderHTML(
 				"emails/commit.html",
 				name=participant["Name"],

@@ -12,8 +12,6 @@ If they pick multiple, they are in every group & emailed the pairs for that grou
 If they dont fill in that form, they are not emailed at all
 
 """
-DEBUG_MODE = False
-PEOPLE_TABLE = "Seyhan's testing group" if DEBUG_MODE else 'Members'
 ################################ IMPORT MODULES ################################
 
 
@@ -28,6 +26,7 @@ from flask import Flask, render_template, redirect, request, url_for
 
 from emails import *
 from hashing import hashID, unhashID
+from constants import *
 
 
 ################################### INIT APP ###################################
@@ -88,55 +87,66 @@ def index():
 
 @app.route('/signup-confirmation')
 def signup_confirmation():
-	return render_template('signup-confirmation.html')
+	return render_template(
+		'confirmation.html',
+		titleAboveSVG="Thanks for signing up!",
+		svg="checkmark",
+		titleBelowSVG="You will receive a confirmation email in a few minutes."
+	)
 
 
 
 #################################### TOPUP #####################################
-#####################
-@app.route('/commit')
-def commit():
-	if not('user' in request.args and unhashID(request.args['user']) >= 0):
-		return render_template(
-			"topup.html",
-			validID=False
-		)
-	airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
-	updatedRecord = airtable.update_by_field("ID", unhashID(request.args['user']), {"Day Preference": ['Thursday']})
-	# add error page if ID not found
-	return redirect('/weeklyconfirmation')
-####################
 
 
 @app.route('/topup', methods=['GET','POST'])
+@app.route('/commit', methods=['GET','POST'])
 def topup():
+	# check if user is a parameter in URL and the hash is valid
 	if not('user' in request.args and unhashID(request.args['user']) >= 0):
 		return render_template(
-			"topup.html",
-			validID=False
+			"confirmation.html",
+			titleAboveSVG="Invalid URL",
+			svg="file-alert",
+			titleBelowSVG="Did you use the link we emailed you?"
+		)
+	airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+	# check if ID is in database
+	if not airtable.match('ID', unhashID(request.args['user'])):
+		return render_template(
+			"confirmation.html",
+			titleAboveSVG="Member not found",
+			svg="file-alert",
+			titleBelowSVG="Did you use the link we emailed you?"
 		)
 
 	if request.method == "GET":
 		return render_template(
 			"topup.html",
-			validID=True,
 			userHash=request.args['user'],
 			nextWeekRange=getWeekToCommitToRange(),
 			dayOptions=getTopupWeekdayOptions()
 		)
 	else: # POST
-		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
-		# add error page if ID not found
-		airtable.update_by_field("ID", unhashID(request.args['user']), {"Day Preference": list(dict(request.form).keys())})
-		return redirect('/weeklyconfirmation')
+		airtable.update_by_field(
+			"ID",
+			unhashID(request.args['user']),
+			{"Day Preference": list(dict(request.form).keys())}
+		)
+		return redirect('/commit-confirmation')
 
 
 ############################## TOPUP CONFIRMATION ##############################
 
 
-@app.route('/weeklyconfirmation')
-def topup_confirmation():
-	return render_template('topup-confirmation.html')
+@app.route('/commit-confirmation')
+def commit_confirmation():
+	return render_template(
+		'confirmation.html',
+		aboveSVG="You're all set for this week!",
+		svg="checkmark",
+		belowSVG="You can close this tab."
+	)
 
 
 ################################### FEEDBACK ###################################
@@ -176,11 +186,11 @@ def feedback():
 			userHash=request.args['user']
 		)
 	else: # POST
-		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
 
 		# get list of participants that are currently opted in
 		participants = {
-			record['fields']['ID'] : record['fields'] for record in airtableParticipants.get_all()
+			record['fields']['ID'] : record['fields'] for record in airtable.get_all()
 		}
 
 		recordsToUpdate = {}
@@ -197,7 +207,11 @@ def feedback():
 		print(json_dumps(recordsToUpdate, indent=4))
 
 		for ID in recordsToUpdate:
-			airtableParticipants.update_by_field("ID", ID, recordsToUpdate[ID])
+			airtable.update_by_field(
+				"ID",
+				ID,
+				recordsToUpdate[ID]
+			)
 			time_sleep(0.2)
 
 		return redirect("/feedback-confirmation")
@@ -208,7 +222,12 @@ def feedback():
 
 @app.route('/feedback-confirmation')
 def feedback_confirmation():
-	return render_template('feedback-confirmation.html')
+	return render_template(
+		'confirmation.html',
+		titleAboveSVG="Thanks for your feedback!",
+		svg="checkmark",
+		titleBelowSVG="You can close this tab."
+	)
 
 
 ################################# VIEW EMAILS ##################################

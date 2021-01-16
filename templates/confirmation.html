@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+
+{% block body %}
+
+<div id="theContainer">
+  <div id="theTitle">
+    <img id="linkedin-logo" src="static/img/linkedin.png">
+    <h1>LinkedIn Pod Sorter</h1>
+  </div>
+
+  <div id="textContainer">
+    {% if titleAboveSVG is defined %}<h2>{{ titleAboveSVG }}</h2>{% endif %}
+    {% if svg == "checkmark" %}
+      <svg id="icon" xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-circle-check" width="200" height="200" viewBox="0 0 24 24" stroke-width="0.5" stroke="#53A20D" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9 12l2 2l4 -4" />
+      </svg>
+    {% elif svg == "file-alert" %}
+      <svg id="icon" xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-alert" width="150" height="150" viewBox="0 0 24 24" stroke-width="0.7" stroke="#CC3F0C" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+        <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+        <line x1="12" y1="11" x2="12" y2="14" />
+      </svg>
+    {% endif %}
+
+    {% if titleBelowSVG is defined %}<h2>{{ titleBelowSVG }}</h2>{% endif %}
+    {% if description is defined %}<h3>{{ description }}</h3>{% endif %}
+  </div>
+</div>
+
+{% endblock %}

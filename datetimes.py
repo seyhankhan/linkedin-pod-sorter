@@ -13,18 +13,12 @@ def getCurrentDatetime():
 
 
 """ datetime, time, timezone """
-def getCommitDeadline(date, userTimezones):
-  emailDatetime = datetime.combine(date, time(7, 30))
-  earliestDatetime = timezone("UTC").localize(emailDatetime)
-  for userTimezone in userTimezones:
-    timezoneDatetime = timezone(userTimezone).localize(emailDatetime)
-    if timezoneDatetime < earliestDatetime:
-      earliestDatetime = timezoneDatetime
-      return earliestDatetime
+def getCommitDeadline(date):
+	return timezone("UTC").localize(datetime.combine(date, time(0)))
 
 
 """ getCurrentDatetime, timedelta """
-def getCurrentCommitWeekMonday(timezones=None):
+def getCurrentCommitWeekMonday():
 	# get the date right NOW
   # if before Friday's commit deadline:
   #     its last monday
@@ -33,14 +27,8 @@ def getCurrentCommitWeekMonday(timezones=None):
 	now = getCurrentDatetime()
 
   friday = now.date() + timedelta(days=-now.weekday() + 4)
-  if not timezones:
-    timezones = [
-      row['fields']['Time Zone'] for row in Airtable("Participants").get_all(
-        fields=['Time Zone']
-      )
-    ]
 
-  if now < getCommitDeadline(friday, timezones):
+  if now < getCommitDeadline(friday):
     return now.date() + timedelta(days=-now.weekday())
   else
     return now.date() + timedelta(days=-now.weekday() + 7)
@@ -48,7 +36,7 @@ def getCurrentCommitWeekMonday(timezones=None):
 
 """ getCurrentCommitWeekMonday, timedelta, timezone, datetime, DAYS """
 def calculateEmailTimestamp(userDay, userTimezone):
-	# get date of when LAST commit email was sent
+	# get the monday the current commit week started
 	# add days to make it the Day Preference
 	nextUserDay = getCurrentCommitWeekMonday() \
 		+ timedelta(days=DAYS.index(userDay))
@@ -72,18 +60,13 @@ def getWeekToCommitToRange():
 """ getCurrentCommitWeekMonday, getCurrentDatetime, Airtable, timedelta, getCommitDeadline """
 # list of every weekday & its full date
 def getCommitDayOptions():
-  timezones = [
-		row['fields']['Time Zone'] for row in Airtable("Participants").get_all(
-      fields=['Time Zone']
-    )
-	]
-	monday = getCurrentCommitWeekMonday(timezones)
+	monday = getCurrentCommitWeekMonday()
 	now = getCurrentDatetime()
 
 	options = []
 	for i in range(5):
 		weekday = monday + timedelta(days=i)
-		if now < getCommitDeadline(weekday, timezones):
+		if now < getCommitDeadline(weekday):
 			options.append({
 				'date'	:	weekday.strftime("%A, %-d %b"),
 				'value'	:	weekday.strftime("%A")

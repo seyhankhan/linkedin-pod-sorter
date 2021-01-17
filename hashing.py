@@ -18,7 +18,7 @@ def hashID(id, name=""):
 	# if id not integer
 	if type(id) != type(1):
 		return ""
-	return name.replace(" ","").ljust(6, "_")[:6] + utf8_to_base64(str(id * 379499079)[::-1])
+	return name.replace(" ","-").ljust(6, "_")[:6] + utf8_to_base64(str(id * 379499079)[::-1])
 
 
 # takes string hash, convert to integer ID

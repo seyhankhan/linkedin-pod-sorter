@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, date, time
+from datetime import datetime, timedelta, time
 from pytz import common_timezones, timezone
 
 
@@ -20,29 +20,24 @@ def getCommitDeadline(date):
 """ getCurrentDatetime, timedelta """
 def getCurrentCommitWeekMonday():
 	# get the date right NOW
-  # if before Friday's commit deadline:
-  #     its last monday
-  # if after Friday's commit deadline:
-  #     its next monday
+	# if before Friday's commit deadline:
+	#		 its last monday
+	# if after Friday's commit deadline:
+	#		 its next monday
 	now = getCurrentDatetime()
 
-  friday = now.date() + timedelta(days=-now.weekday() + 4)
+	friday = now.date() + timedelta(days=-now.weekday() + 4)
 
-  if now < getCommitDeadline(friday):
-    return now.date() + timedelta(days=-now.weekday())
-  else
-    return now.date() + timedelta(days=-now.weekday() + 7)
+	if now < getCommitDeadline(friday):
+		return now.date() + timedelta(days=-now.weekday())
+	else:
+		return now.date() + timedelta(days=-now.weekday() + 7)
 
 
-""" getCurrentCommitWeekMonday, timedelta, timezone, datetime, DAYS """
-def calculateEmailTimestamp(userDay, userTimezone):
-	# get the monday the current commit week started
-	# add days to make it the Day Preference
-	nextUserDay = getCurrentCommitWeekMonday() \
-		+ timedelta(days=DAYS.index(userDay))
-
+""" timezone, datetime """
+def calculateEmailTimestamp(date, userTimezone):
 	datetimeToSend = timezone(userTimezone).localize(
-		datetime.combine(nextUserDay, time(7, 30))
+		datetime.combine(date, time(7, 30))
 	)
 	return int(datetimeToSend.timestamp())
 

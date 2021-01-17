@@ -15,18 +15,13 @@ If they dont fill in that form, they are not emailed at all
 ################################ IMPORT MODULES ################################
 
 
-from itertools import product
-from json import dumps as json_dumps
-from os import environ
-from time import sleep as time_sleep
-
-from random import shuffle
-
 from flask import Flask, render_template, redirect, request, url_for
 
-from emails import *
+from airtables import Airtable
+from constants import DEBUG_MODE
+from datetimes import *
+from emails import createSignupEmail, sendEmail
 from hashing import hashID, unhashID
-from constants import *
 
 
 ################################### INIT APP ###################################
@@ -51,7 +46,7 @@ def index():
 	else: # POST
 		group = "Sandbox" if "sandbox" in request.path.lower() else "GTeX"
 
-		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+		airtable = Airtable("Participants")
 		record = {
 			"Name": request.form["name"],
 			"Email": request.form["email"],
@@ -67,17 +62,14 @@ def index():
 				userAlreadySignedUp='True'
 			)
 		newRow = airtable.insert(record)
-		errorOccured = sendEmail(Email(
+		errorOccured = sendEmail(createSignupEmail(
 			to=record["Email"],
-			subject="POD Confirmation",
-			html=render_template(
-				"emails/signup.html",
-				name=record['Name'],
-				group=group,
-				userHash=hashID(newRow['fields']['ID'], record['Name'])
-			)
+			name=record['Name'],
+			group=group,
+			IDhash=hashID(newRow['fields']['ID']),
+			weekToCommitTo=getWeekToCommitToRange()
 		))
-		if errorOccured == "Error":
+		if errorOccured == "ERROR":
 			pass
 		return redirect('/signup-confirmation')
 
@@ -110,7 +102,7 @@ def topup():
 			svg="file-alert",
 			titleBelowSVG="Did you use the link we emailed you?"
 		)
-	airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+	airtable = Airtable("Participants")
 	# check if ID is in database
 	if not airtable.match('ID', unhashID(request.args['user'])):
 		return render_template(
@@ -125,7 +117,7 @@ def topup():
 			"topup.html",
 			userHash=request.args['user'],
 			nextWeekRange=getWeekToCommitToRange(),
-			dayOptions=getTopupWeekdayOptions()
+			dayOptions=getCommitDayOptions()
 		)
 	else: # POST
 		airtable.update_by_field(
@@ -143,9 +135,9 @@ def topup():
 def commit_confirmation():
 	return render_template(
 		'confirmation.html',
-		aboveSVG="You're all set for this week!",
+		titleAboveSVG="You're all set for this week!",
 		svg="checkmark",
-		belowSVG="You can close this tab."
+		titleBelowSVG="You can close this tab."
 	)
 
 
@@ -154,23 +146,37 @@ def commit_confirmation():
 
 @app.route('/feedback', methods=['GET', 'POST'])
 def feedback():
+	# check if user is a parameter in URL and the hash is valid
+	if not('user' in request.args and unhashID(request.args['user']) >= 0):
+		return render_template(
+			"confirmation.html",
+			titleAboveSVG="Invalid URL",
+			svg="file-alert",
+			titleBelowSVG="Did you use the link we emailed you?"
+		)
+	airtableParticipants = Airtable("Participants")
+	# get dict of participants
+	participants = {
+		record['fields']['ID'] : record['fields'] for record in airtableParticipants.get_all()
+	}
+	# check if ID is in database
+	if unhashID(request.args['user']) not in participants:
+		return render_template(
+			"confirmation.html",
+			titleAboveSVG="Member not found",
+			svg="file-alert",
+			titleBelowSVG="Did you use the link we emailed you?"
+		)
+
+
 	if request.method == "GET":
 		# get user's pairs
 		# list them all with 3 buttons for each for feedback (all optional)
 		# list all people that are assigned to them with 3 butons for feedback (all optional)
 		# submit on airtable
-		if 'user' not in request.args:
-			return redirect("/")
-		userID = unhashID(request.args['user'])
-
-		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
-		airtablePairs = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), 'Emails', environ.get('AIRTABLE_KEY'))
-
-		# get list of participants that are currently opted in
-		participants = {
-			record['fields']['ID'] : record['fields'] for record in airtableParticipants.get_all()
-		}
-
+		airtablePairs = Airtable('Emails')
+		# get list of participants
+		# make it include every row the id matches on Emails table #############
 		userPairs = airtablePairs.match("ID", userID)
 		profilesIDs = userPairs["fields"]["Profiles"].split(",")
 		profilesAssignedIDs = userPairs["fields"]["Profiles Assigned"].split(",")
@@ -178,21 +184,14 @@ def feedback():
 		peopleToCommentOn = 		[participants[int(id)] for id in profilesIDs]
 		peopleThatWillComment = [participants[int(id)] for id in profilesAssignedIDs]
 
-
 		return render_template(
 			"feedback.html",
 			peopleToCommentOn=peopleToCommentOn,
 			peopleThatWillComment=peopleThatWillComment,
 			userHash=request.args['user']
 		)
+
 	else: # POST
-		airtable = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
-
-		# get list of participants that are currently opted in
-		participants = {
-			record['fields']['ID'] : record['fields'] for record in airtable.get_all()
-		}
-
 		recordsToUpdate = {}
 		for feedback in dict(request.form).keys():
 			id = 								int(feedback.split("-")[1])
@@ -204,15 +203,7 @@ def feedback():
 			else:
 				recordsToUpdate[id] = {feedbackCategory: feedbackCount}
 
-		print(json_dumps(recordsToUpdate, indent=4))
-
-		for ID in recordsToUpdate:
-			airtable.update_by_field(
-				"ID",
-				ID,
-				recordsToUpdate[ID]
-			)
-			time_sleep(0.2)
+		airtableParticipants.batch_update_by_field("ID", recordsToUpdate)
 
 		return redirect("/feedback-confirmation")
 
@@ -233,10 +224,11 @@ def feedback_confirmation():
 ################################# VIEW EMAILS ##################################
 
 
+# add commit email route
 if DEBUG_MODE:
-	@app.route('/signupemail')
+	@app.route('/signup-email')
 	def viewSignupEmail():
-		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+		airtableParticipants = Airtable("Participants")
 		participants = {
 			row['fields']['ID'] : row['fields'] for row in airtableParticipants.get_all(
 				fields=[
@@ -252,9 +244,9 @@ if DEBUG_MODE:
 		)
 
 
-	@app.route('/weeklyemail')
+	@app.route('/profiles-email')
 	def viewWeeklyEmail():
-		airtableParticipants = Airtable(environ.get('AIRTABLE_LINKEDIN_TABLE'), PEOPLE_TABLE, environ.get('AIRTABLE_KEY'))
+		airtableParticipants = Airtable("Participants")
 		participants = {
 			row['fields']['ID'] : row['fields'] for row in airtableParticipants.get_all(
 				fields=[
@@ -270,7 +262,6 @@ if DEBUG_MODE:
 			peopleToCommentOn=[110,111,112],
 			peopleThatWillComment=[120,121,122],
 			participants=participants,
-			participating=True,
 			nextWeekRange="8 - 12 Jan"
 		)
 

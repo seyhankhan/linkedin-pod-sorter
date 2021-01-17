@@ -11,11 +11,13 @@
 		You are IN! 👌<br>
 		Thank you for signing up to the {{ group }} group.<br>
 		<br>
-
-		<div onclick="window.open('http://linkedin-pod-sorter.herokuapp.com/topup?user={{ userHash }}', '_blank')" style="padding:20px;background-color:#C5E0B3;border-radius:8px;width:fit-content;max-width:100%;cursor:pointer;justify-content:center;align-items:center;">
-			Click to confirm the days you are “Pod-ding” ({{ nextWeekRange }})
-		</div>
-
+		<a href='http://linkedin-pod-sorter.herokuapp.com/commit?user={{ userHash }}'>
+			<div onclick="window.open('http://linkedin-pod-sorter.herokuapp.com/commit?user={{ userHash }}', '_blank')" style="padding:20px;background-color:#C5E0B3;border-radius:8px;width:fit-content;max-width:100%;cursor:pointer;justify-content:center;align-items:center;">
+				Click to confirm the days you are “Pod-ding” next week ({{ weekToCommitTo }})
+			</div>
+		</a>
+		<br>
+		<br>
 		<div id="box" style="padding:20px;background-color:#F0D060;border-radius:8px;width:fit-content;max-width:100%;justify-content:center;align-items:center;">
 			ESSENTIAL - Please save <b><a href="https://docs.google.com/document/d/1JkJmkpSqJdwur7pFF14aTcT7senipRNj3b8lIK5ns8U/edit?usp=sharing">this link for reference!</a></b><br>
 			Read the instructions very carefully so you know how to get the most out of this group.

@@ -50,9 +50,9 @@ def index():
 			"Group": "Sandbox" if "sandbox" in request.path.lower() else "GTeX"
 		})
 		errorOccured = sendSignupEmail(
-			to=record["Email"],
-			name=record['Name'],
-			group=group,
+			to=newRow['fields']["Email"],
+			name=newRow['fields']['Name'],
+			group=newRow['fields']['Group'],
 			ID=newRow['fields']['ID'],
 			weekToCommitTo=getWeekToCommitToRange()
 		)

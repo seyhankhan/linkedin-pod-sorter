@@ -1,12 +1,12 @@
 from os import environ
 from time import sleep as time_sleep
 
-from airtable import Airtable as AirtableInit
+from airtable import Airtable as AirtablePythonWrapper
 
 from constants import DEBUG_MODE
 
 
-class Airtable(AirtableInit):
+class Airtable(AirtablePythonWrapper):
   def __init__(self, tableName):
     if tableName == "Participants":
       self._table = "Seyhan's testing group" if DEBUG_MODE else "Members"

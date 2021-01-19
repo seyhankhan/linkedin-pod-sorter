@@ -1,17 +1,8 @@
 ############ Seyhan Van Khan
 ############ Linkedin Pod Sorter
 ############ description
-############ December 2020
-# TURN 'OPTED IN' OFF FOR ALL
-# save linkedin profile URLs as 1 standard
+############ December 2020 - January 2021
 # get requests are limited by 100? do batch instead
-# (if using sendgrid, use 'personalizations' github.com/sendgrid/sendgrid-python/issues/401)
-"""
-Every week, every person chooses 1 or multiple days for next weeks pod sorting on SUNDAY EMAIL
-If they pick multiple, they are in every group & emailed the pairs for that group for every day they picked that week.
-If they dont fill in that form, they are not emailed at all
-
-"""
 ################################ IMPORT MODULES ################################
 
 
@@ -28,7 +19,6 @@ from hashing import hashID, unhashID
 
 
 app = Flask(__name__)
-app.secret_key = "s14a"
 
 
 ##################################### INDEX ####################################
@@ -44,16 +34,7 @@ def index():
 			timezones=getAllTimezones()
 		)
 	else: # POST
-		group = "Sandbox" if "sandbox" in request.path.lower() else "GTeX"
-
 		airtable = Airtable("Participants")
-		record = {
-			"Name": request.form["name"],
-			"Email": request.form["email"],
-			"LinkedIn Profile": request.form["linkedinProfile"],
-			"Time Zone": request.form["timezone"],
-			"Group": group
-		}
 		if airtable.match('Email', request.form["email"]) or airtable.match('LinkedIn Profile', request.form["linkedinProfile"]):
 			return render_template(
 				'index.html',
@@ -61,12 +42,18 @@ def index():
 				timezones=getAllTimezones(),
 				userAlreadySignedUp='True'
 			)
-		newRow = airtable.insert(record)
-		errorOccured = sendEmail(createSignupEmail(
+		newRow = airtable.insert({
+			"Name": request.form["name"],
+			"Email": request.form["email"],
+			"LinkedIn Profile": request.form["linkedinProfile"],
+			"Time Zone": request.form["timezone"],
+			"Group": "Sandbox" if "sandbox" in request.path.lower() else "GTeX"
+		})
+		errorOccured = SendSignupEmail(
 			to=record["Email"],
 			name=record['Name'],
 			group=group,
-			IDhash=hashID(newRow['fields']['ID']),
+			ID=newRow['fields']['ID'],
 			weekToCommitTo=getWeekToCommitToRange()
 		))
 		if errorOccured == "ERROR":
@@ -85,7 +72,6 @@ def signup_confirmation():
 		svg="checkmark",
 		titleBelowSVG="You will receive a confirmation email in a few minutes."
 	)
-
 
 
 #################################### TOPUP #####################################

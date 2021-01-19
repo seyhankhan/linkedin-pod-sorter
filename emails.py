@@ -4,6 +4,7 @@ from jinja2 import Environment, FileSystemLoader
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, SendAt
 
+from constants import DEBUG_MODE
 from hashing import hashID
 
 
@@ -23,7 +24,7 @@ def Email(to, subject, html, timestamp=None):
 		subject=subject,
 		html_content=html
 	)
-	if timestamp:
+	if timestamp and not DEBUG_MODE:
 		print(to, timestamp)
 		email.send_at = SendAt(timestamp)
 	return email
@@ -39,6 +40,8 @@ def sendEmails(emails):
 			print('Headers:\n', response.headers)
 		except Exception as e:
 			print(e)
+
+	print(len(emails), "emails sent")
 
 
 def sendEmail(email):
@@ -57,25 +60,24 @@ def sendEmail(email):
 ################################# CREATE EMAILS ################################
 
 
-def createSignupEmail(to, name, group, IDhash, weekToCommitTo):
-	print(IDhash)
-	return Email(
+def sendSignupEmail(to, name, group, ID, weekToCommitTo):
+	sendEmail(Email(
 		to=to,
 		subject="POD Confirmation",
 		html=renderHTML(
 			"emails/signup.html",
 			name=name,
 			group=group,
-			userHash=IDhash,
+			userHash=hashID(ID),
 			weekToCommitTo=weekToCommitTo
 		)
-	)
+	))
+
 
 # Runs Mon-Fri, at 07:30 UTC
 # (should be running 1930 day before)
-def createProfilesEmail(participants, pairs, emailDate):
+def sendProfilesEmail(participants, pairs, emailDate):
 	emails = []
-
 	# for each email to send profiles to this week
 	for pairRecord in pairs:
 		participant = participants[pairRecord["ID"]]
@@ -96,11 +98,11 @@ def createProfilesEmail(participants, pairs, emailDate):
 				participants=participants
 			)
 		))
-	return emails
+	sendEmails(emails)
 
 
 # runs on Sunday 07:30 UTC
-def createCommitEmails(participants, timestamp, weekToCommitTo):
+def sendCommitEmails(participants, timestamp, weekToCommitTo):
 	emails = []
 	for participant in participants.values():
 		emails.append(Email(
@@ -114,4 +116,4 @@ def createCommitEmails(participants, timestamp, weekToCommitTo):
 				weekToCommitTo=weekToCommitTo,
 			)
 		))
-	return emails
+	sendEmails(emails)

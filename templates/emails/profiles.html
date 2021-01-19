@@ -7,32 +7,43 @@
     Hey {{ name }}, you Gorgeous Human Being you!
 		<br>
 		<br>
-		<b>Here are TODAY’s {{ peopleToCommentOn|length }} LinkedIn profiles for you to comment on</b>
-  	<ul>
-    	{% for id in peopleToCommentOn %}
-      	<li><a href='{{ participants[id]["LinkedIn Profile"] }}' target='_blank'>{{ participants[id]["Name"] }}</a></li>
-    	{% endfor %}
-    </ul>
-    <br>
-    <b>These {{ peopleThatWillComment|length }} people will also COMMENT on your profile today</b>
-    <ul>
-      {% for id in peopleThatWillComment %}
-        <li><a href='{{ participants[id]["LinkedIn Profile"] }}' target='_blank'>{{ participants[id]["Name"] }}</a></li>
-      {% endfor %}
-    </ul>
-		If any of their comments are missing, please contact them directly.
-   	<br>
-		<br>
-		<br>
-		At the end of the day, make sure you<br>
-		<a href='http://linkedin-pod-sorter.herokuapp.com/feedback?user={{ userHash }}'>
-			<div onclick="window.open('http://linkedin-pod-sorter.herokuapp.com/feedback?user={{ userHash }}', '_blank')" style="padding:20px;background-color:#F7CAAC;border-radius:8px;width:fit-content;max-width:100%;cursor:pointer;justify-content:center;align-items:center;">
-				Give Feedback on Posts & Comments
-			</div>
-		</a>
-		This helps us all get better, thank you!<br>
-		<br>
-		<br>
+		{% if peopleToCommentOn|length == 0 %}
+			No one else signed up for this day. Get in touch with your group and see if there are more to join you!<br>
+		{% else %}
+			{% if peopleToCommentOn|length < 4 %}
+				Not many signed up today. Get in touch with your group and see if there are more to join you!<br>
+			{% endif %}
+			<b>Here are TODAY’s {{ peopleToCommentOn|length }} LinkedIn profile{% if peopleToCommentOn|length != 1 %}s{% endif %} for you to comment on</b>
+	  	<ul>
+	    	{% for id in peopleToCommentOn %}
+	      	<li><a href='{{ participants[id]["LinkedIn Profile"] }}' target='_blank'>{{ participants[id]["Name"] }}</a></li>
+	    	{% endfor %}
+	    </ul>
+	    <br>
+			{% if peopleToCommentOn|length == 1 %}
+	    	<b>This person will also COMMENT on your profile today</b>
+			{% else %}
+				<b>These {{ peopleThatWillComment|length }} people will also COMMENT on your profile today</b>
+			{% endif %}
+	    <ul>
+	      {% for id in peopleThatWillComment %}
+	        <li><a href='{{ participants[id]["LinkedIn Profile"] }}' target='_blank'>{{ participants[id]["Name"] }}</a></li>
+	      {% endfor %}
+	    </ul>
+			If any of their comments are missing, please contact them directly.
+	   	<br>
+			<br>
+			<br>
+			At the end of the day, make sure you<br>
+			<a href='http://linkedin-pod-sorter.herokuapp.com/feedback?user={{ userHash }}'>
+				<div onclick="window.open('http://linkedin-pod-sorter.herokuapp.com/feedback?user={{ userHash }}', '_blank')" style="padding:20px;background-color:#F7CAAC;border-radius:8px;width:fit-content;max-width:100%;cursor:pointer;justify-content:center;align-items:center;">
+					Give Feedback on Posts & Comments
+				</div>
+			</a>
+			This helps us all get better, thank you!<br>
+			<br>
+			<br>
+		{% endif %}
 		Much Love,<br>
 		Matteo<br>
     <br>

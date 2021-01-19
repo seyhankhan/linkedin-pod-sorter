@@ -5,13 +5,8 @@ from constants import MAX_PROFILES_PER_PERSON
 from datetimes import calculateEmailTimestamp, getCurrentDatetime, getWeekToCommitToRange
 from emails import *
 
-"""
-make these run 18:30, the night before!!
-make sunday emails send at local time zone
-"""
-
 currentDate = getCurrentDatetime().date()
-# if today is sat, nothing to do, just exit program
+# if today is Saturday, nothing to do, just exit program
 if currentDate.weekday() == 5:
 	exit()
 
@@ -37,13 +32,11 @@ if currentDate.weekday() == 6:
 	# clear every row from 'Emails' table
 	airtablePairs.delete_all()
 
-	emails = createCommitEmails(
+	sendCommitEmails(
 		participants,
 		calculateEmailTimestamp(currentDate, 'UTC'),
 		getWeekToCommitToRange()
 	)
-	
-	sendEmails(emails)
 
 
 ############################### MONDAY to FRIDAY ###############################
@@ -66,7 +59,7 @@ if currentDate.weekday() < 5:
 			groups[participant['Group']] = [participant]
 
 
-	pairsRows = []
+	allPairs = []
 	for group in groups:
 		numParticipants = len(groups[group])
 		shuffle(groups[group])
@@ -75,10 +68,10 @@ if currentDate.weekday() < 5:
 		# 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
 		profilePairIndices = range(1, min(MAX_PROFILES_PER_PERSON, numParticipants - 1) + 1)
 
-		pairs = []
+		groupPairs = []
 		# for each participant
 		for participantIndex in range(numParticipants):
-			pairs.append(
+			groupPairs.append(
 				{
 					"ID": groups[group][participantIndex]["ID"],
 					"Profiles": [
@@ -93,7 +86,13 @@ if currentDate.weekday() < 5:
 					)
 				}
 			)
-		pairsRows.extend(pairs)
+		allPairs.extend(groupPairs)
+
+	sendProfilesEmail(
+		participants,
+		allPairs,
+		currentDate.strftime("%-d %b")
+	)
 
 	# add pairs to Emails table (formatted to strings)
 	airtablePairs.batch_insert([
@@ -102,19 +101,8 @@ if currentDate.weekday() < 5:
 			"Profiles" : ','.join(str(i) for i in row["Profiles"]),
 			"Profiles Assigned" : ','.join(str(i) for i in row["Profiles Assigned"]),
 			"Timestamp" : row["Timestamp"]
-		} for row in pairs
+		} for row in allPairs
 	])
-
-	emails = createProfilesEmail(
-		participants,
-		pairs,
-		currentDate.strftime("%-d %b")
-	)
-
-	# now send each email
-	# if error occurs, output ERROR
-	sendEmails(emails)
-
 
 # First email is sent Sunday, 18:30 UTC (New Zealand)
 # Last email is sent Friday, 17:30 UTC (Hawaii)

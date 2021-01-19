@@ -11,7 +11,7 @@ from flask import Flask, render_template, redirect, request, url_for
 from airtables import Airtable
 from constants import DEBUG_MODE
 from datetimes import *
-from emails import createSignupEmail, sendEmail
+from emails import sendSignupEmail
 from hashing import hashID, unhashID
 
 
@@ -49,13 +49,13 @@ def index():
 			"Time Zone": request.form["timezone"],
 			"Group": "Sandbox" if "sandbox" in request.path.lower() else "GTeX"
 		})
-		errorOccured = SendSignupEmail(
+		errorOccured = sendSignupEmail(
 			to=record["Email"],
 			name=record['Name'],
 			group=group,
 			ID=newRow['fields']['ID'],
 			weekToCommitTo=getWeekToCommitToRange()
-		))
+		)
 		if errorOccured == "ERROR":
 			pass
 		return redirect('/signup-confirmation')

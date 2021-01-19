@@ -162,10 +162,12 @@ def feedback():
 		# submit on airtable
 		airtablePairs = Airtable('Emails')
 		# get list of participants
-		# make it include every row the id matches on Emails table #############
+		# make it include every row the id matches on Emails table
 		userPairs = airtablePairs.match("ID", userID)
-		profilesIDs = userPairs["fields"]["Profiles"].split(",")
-		profilesAssignedIDs = userPairs["fields"]["Profiles Assigned"].split(",")
+		profileIDs, profilesAssignedIDs = set(), set()
+		for row in userPairs:
+			profileIDs.update(row["fields"]["Profiles"].split(","))
+			profilesAssignedIDs.update(row["fields"]["Profiles Assigned"].split(","))
 
 		peopleToCommentOn = 		[participants[int(id)] for id in profilesIDs]
 		peopleThatWillComment = [participants[int(id)] for id in profilesAssignedIDs]

@@ -27,7 +27,7 @@ class Airtable(AirtablePythonWrapper):
       self.update(row['id'], fields)
       time_sleep(self.API_LIMIT)
 
-  def batch_update_by_field(self, recordsToUpdate):
+  def batch_update_by_field(self, column, recordsToUpdate):
     for ID in recordsToUpdate:
-      self.update_by_field("ID", ID, recordsToUpdate[ID])
+      self.update_by_field(column, ID, recordsToUpdate[ID])
       time_sleep(self.API_LIMIT)

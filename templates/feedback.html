@@ -30,7 +30,7 @@
   <div id="formContainer">
     <h2>Post/Comment Feedback</h2>
 
-    <form id="feedbackForm" class="ui form" method="POST" action="/feedback">
+    <form id="feedbackForm" class="ui form" method="POST" action="/feedback?user={{ userHash }}">
       {% for person in peopleToCommentOn %}
         <label for="group-{{ person['ID'] }}">{{ person["Name"] }}:</label>
         <div name="group-{{ person['ID'] }}" class="grouped fields">

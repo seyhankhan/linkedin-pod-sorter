@@ -163,21 +163,29 @@ def feedback():
 		airtablePairs = Airtable('Emails')
 		# get list of participants
 		# make it include every row the id matches on Emails table
-		userPairs = airtablePairs.match("ID", unhashID(request.args['user']))
+		userPairs = airtablePairs.search("ID", unhashID(request.args['user']))
 		profileIDs, profilesAssignedIDs = set(), set()
 		for row in userPairs:
 			profileIDs.update(row["fields"]["Profiles"].split(","))
 			profilesAssignedIDs.update(row["fields"]["Profiles Assigned"].split(","))
 
-		peopleToCommentOn = 		[participants[int(id)] for id in profilesIDs]
-		peopleThatWillComment = [participants[int(id)] for id in profilesAssignedIDs]
+		# add ids to lists ONLY if it exists in participants table
+		peopleToCommentOn = 		[participants[int(id)] for id in profileIDs if int(id) in participants]
+		peopleThatWillComment = [participants[int(id)] for id in profilesAssignedIDs if int(id) in participants]
 
-		return render_template(
-			"feedback.html",
-			peopleToCommentOn=peopleToCommentOn,
-			peopleThatWillComment=peopleThatWillComment,
-			userHash=request.args['user']
-		)
+		if len(peopleToCommentOn) + len(peopleThatWillComment) == 0:
+			return render_template(
+				'confirmation.html',
+				titleAboveSVG="No one to give feedback to this week",
+				svg="file-alert"
+			)
+		else:
+			return render_template(
+				"feedback.html",
+				peopleToCommentOn=peopleToCommentOn,
+				peopleThatWillComment=peopleThatWillComment,
+				userHash=request.args['user']
+			)
 
 	else: # POST
 		recordsToUpdate = {}

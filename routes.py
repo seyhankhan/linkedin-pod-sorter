@@ -163,7 +163,7 @@ def feedback():
 		airtablePairs = Airtable('Emails')
 		# get list of participants
 		# make it include every row the id matches on Emails table
-		userPairs = airtablePairs.match("ID", userID)
+		userPairs = airtablePairs.match("ID", unhashID(request.args['user']))
 		profileIDs, profilesAssignedIDs = set(), set()
 		for row in userPairs:
 			profileIDs.update(row["fields"]["Profiles"].split(","))

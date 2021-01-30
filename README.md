@@ -8,5 +8,5 @@ The ideal situation is having 10-15 people who will reliably comment on each oth
 
 
 ## Integrations
-* [**Airtable API**](https://airtable.com/api) to store emails
-* [**SendGrid v3 Transactional API**](https://sendgrid.com/docs/api-reference/) to send emails
+* [**Airtable API**](https://airtable.com/api) as a UX-friendly database for the client to manage
+* [**SendGrid v3 Transactional API**](https://sendgrid.com/docs/api-reference/) to send daily personalised emails

@@ -19,15 +19,18 @@ class Airtable(AirtablePythonWrapper):
       environ.get('AIRTABLE_KEY')
     )
 
+  def time_sleep(self):
+    time_sleep(self.API_LIMIT)
+
   def delete_all(self):
     self.batch_delete([record['id'] for record in self.get_all()])
 
   def update_all(self, fields):
     for row in self.get_all():
       self.update(row['id'], fields)
-      time_sleep(self.API_LIMIT)
+      self.time_sleep()
 
   def batch_update_by_field(self, column, recordsToUpdate):
     for ID in recordsToUpdate:
       self.update_by_field(column, ID, recordsToUpdate[ID])
-      time_sleep(self.API_LIMIT)
+      self.time_sleep()

@@ -203,6 +203,18 @@ def feedback():
 
 		airtableParticipants.batch_update_by_field("ID", recordsToUpdate)
 
+		# add raw data to 'Feedback' table on Airtable
+		feedbackDict = []
+		for id in recordsToUpdate:
+			feedbackDict.append({
+				"Name giving feedback": participants[unhashID(request.args['user'])]['Name'],
+				"Name receiving feedback": participants[id]['Name']
+			})
+			for feedbackCategory in recordsToUpdate[id]:
+				feedbackDict[-1][feedbackCategory] = 1
+
+		Airtable('Feedback').batch_insert(feedbackDict)
+
 		return redirect("/feedback-confirmation")
 
 

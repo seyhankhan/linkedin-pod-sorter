@@ -166,9 +166,9 @@ def feedback():
 		userPairs = airtablePairs.search("ID", unhashID(request.args['user']))
 		profileIDs, profilesAssignedIDs = set(), set()
 		for row in userPairs:
-			if "Profiles" in row:
+			if "Profiles" in row["fields"]:
 				profileIDs.update(row["fields"]["Profiles"].split(","))
-			if "Profiles Assigned" in row:
+			if "Profiles Assigned" in row["fields"]:
 				profilesAssignedIDs.update(row["fields"]["Profiles Assigned"].split(","))
 
 		# add ids to lists ONLY if it exists in participants table
